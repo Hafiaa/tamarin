@@ -35,9 +35,15 @@ class BlockedDateResource extends Resource
                             ->native(false)
                             ->displayFormat('d F Y')
                             ->closeOnDateSelection()
-                            ->minDate(now())
-                            ->rules(['required', 'date'])
-                            ->unique(ignoreRecord: true)
+                            ->minDate(date('Y-m-d'))
+                            ->rules(function () use ($form) {
+                                return [
+                                    'required', 
+                                    'date',
+                                    Rule::unique('blocked_dates', 'date')
+                                        ->ignore($form->getRecord())
+                                ];
+                            })
                             ->columnSpanFull(),
                             
                         Forms\Components\DatePicker::make('blocked_until')
@@ -47,7 +53,7 @@ class BlockedDateResource extends Resource
                             ->displayFormat('d F Y')
                             ->closeOnDateSelection()
                             ->after('date')
-                            ->columnSpanFull(),
+                            ->columnSpan(2),
                             
                         Forms\Components\Textarea::make('reason')
                             ->label('Alasan Pemblokiran')

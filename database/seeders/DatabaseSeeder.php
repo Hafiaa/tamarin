@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,6 +19,7 @@ class DatabaseSeeder extends Seeder
             User::factory()->create([
                 'name' => 'Admin User',
                 'email' => 'admin@example.com',
+                'password' => bcrypt('password'),
                 'is_admin' => true,
             ]);
         }
@@ -27,12 +29,18 @@ class DatabaseSeeder extends Seeder
             User::factory()->create([
                 'name' => 'Test Customer',
                 'email' => 'customer@example.com',
+                'password' => bcrypt('password'),
                 'is_admin' => false,
             ]);
         }
+        
+        // Seed blocked dates and testimonials
+        $this->call([
+            BlockedDatesAndTestimonialsSeeder::class,
+        ]);
 
         // Disable foreign key checks
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         
         // Truncate tables first to avoid duplicates
         \App\Models\MenuItem::truncate();
@@ -46,7 +54,7 @@ class DatabaseSeeder extends Seeder
 
         // Seed menu categories and items
         $this->call([
-            MenuCategoriesAndItemsSeeder::class,
+            UpdatedMenuItemsSeeder::class,
             PackageTemplatesSeeder::class,
         ]);
     }
