@@ -23,11 +23,27 @@ class CompanyProfileController extends Controller
             ->orderBy('sort_order')
             ->get();
             
+        $socialMedia = [
+            'instagram' => [
+                [
+                    'url' => 'https://www.instagram.com/tamarincafe?igsh=bDBqbzJwMHBjczZl',
+                    'name' => 'Tamarin Cafe',
+                    'handle' => '@tamarincafe'
+                ],
+                [
+                    'url' => 'https://www.instagram.com/nikahditamarin?igsh=dTA3YjRuZ3BzbGRo',
+                    'name' => 'Nikah di Tamarin',
+                    'handle' => '@nikahditamarin'
+                ]
+            ]
+        ];
+        
         return view('company.about', compact(
             'aboutContent',
             'companyVision',
             'companyMission',
-            'teamMembers'
+            'teamMembers',
+            'socialMedia'
         ));
     }
     

@@ -260,6 +260,32 @@
             </div>
         </div>
     </section>
+
+    <!-- Connect With Us Section -->
+    <section class="connect-section py-5">
+        <div class="container">
+            <div class="section-header text-center mb-5">
+                <h2 class="section-title">Connect With Us</h2>
+                <p class="section-subtitle">Follow us on Instagram for the latest updates and events</p>
+            </div>
+            <div class="row justify-content-center">
+                @foreach($socialMedia['instagram'] as $account)
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="instagram-card text-center p-4 bg-white rounded shadow-sm h-100">
+                        <div class="instagram-icon mb-3">
+                            <i class="fab fa-instagram fa-3x" style="color: #E1306C;"></i>
+                        </div>
+                        <h4 class="mb-3">{{ $account['name'] }}</h4>
+                        <p class="text-muted mb-4">{{ $account['handle'] }}</p>
+                        <a href="{{ $account['url'] }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fab fa-instagram me-2"></i> Follow Us
+                        </a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
 @endsection
 
 @push('styles')

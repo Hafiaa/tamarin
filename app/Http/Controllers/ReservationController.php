@@ -102,7 +102,7 @@ class ReservationController extends Controller
         
         // Check date availability
         $dateObj = Carbon::parse($validated['event_date']);
-        $isBlocked = BlockedDate::isBlocked($dateObj)->exists();
+        $isBlocked = BlockedDate::isDateBlocked($dateObj);
         $hasReservation = Reservation::where('event_date', $dateObj->toDateString())
             ->where('status', '!=', 'cancelled')
             ->exists();

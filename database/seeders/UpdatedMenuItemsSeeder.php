@@ -10,9 +10,21 @@ class UpdatedMenuItemsSeeder extends Seeder
 {
     public function run(): void
     {
+        // Nonaktifkan foreign key checks
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        
         // Clear existing menu items and categories
         MenuItem::truncate();
         MenuCategory::truncate();
+        
+        // Aktifkan kembali foreign key checks
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        
+        // Buat direktori untuk gambar default jika belum ada
+        $defaultImagePath = storage_path('app/public/default-menu-images');
+        if (!file_exists($defaultImagePath)) {
+            mkdir($defaultImagePath, 0755, true);
+        }
 
         // Create Menu Categories
         $categories = [
@@ -176,6 +188,49 @@ class UpdatedMenuItemsSeeder extends Seeder
             ]
         ];
 
+        // Daftar gambar default berdasarkan kategori
+        $defaultImages = [
+            'appetizers' => 'appetizer.jpg',
+            'main' => 'main-course.jpg',
+            'desserts' => 'dessert.jpg',
+            'drinks' => 'drink.jpg',
+            'default' => 'default.jpg'
+        ];
+        
+        // Buat gambar default jika belum ada
+        foreach ($defaultImages as $type => $filename) {
+            $filePath = storage_path("app/public/default-menu-images/{$filename}");
+            if (!file_exists($filePath)) {
+                // Buat gambar kosong dengan warna berbeda untuk setiap tipe
+                $im = imagecreatetruecolor(800, 600);
+                $colors = [
+                    'appetizers' => [255, 200, 150], // Oranye muda
+                    'main' => [200, 230, 200], // Hijau muda
+                    'desserts' => [255, 200, 200], // Merah muda
+                    'drinks' => [200, 200, 255], // Biru muda
+                    'default' => [230, 230, 230] // Abu-abu
+                ];
+                $color = $colors[$type] ?? $colors['default'];
+                $bgColor = imagecolorallocate($im, $color[0], $color[1], $color[2]);
+                $textColor = imagecolorallocate($im, 0, 0, 0);
+                
+                imagefill($im, 0, 0, $bgColor);
+                
+                // Tambahkan teks
+                $text = strtoupper(str_replace('-', ' ', $type));
+                $font = 5; // Ukuran font built-in (1-5)
+                $textWidth = imagefontwidth($font) * strlen($text);
+                $textX = (800 - $textWidth) / 2;
+                $textY = 300 - (imagefontheight($font) / 2);
+                
+                imagestring($im, $font, $textX, $textY, $text, $textColor);
+                
+                // Simpan gambar
+                imagejpeg($im, $filePath, 90);
+                imagedestroy($im);
+            }
+        }
+        
         // Create categories and menu items
         foreach ($categories as $categoryData) {
             $category = MenuCategory::create([
@@ -187,7 +242,8 @@ class UpdatedMenuItemsSeeder extends Seeder
 
             $sortOrder = 1;
             foreach ($categoryData['items'] as $itemName => $price) {
-                MenuItem::create([
+                // Create menu item
+                $menuItem = MenuItem::create([
                     'name' => $itemName,
                     'description' => 'Nikmati ' . $itemName . ' yang lezat dan menggugah selera',
                     'price' => $price,
@@ -196,6 +252,26 @@ class UpdatedMenuItemsSeeder extends Seeder
                     'is_available' => true,
                     'sort_order' => $sortOrder++,
                 ]);
+                
+                // Tentukan tipe gambar berdasarkan kategori
+                $categoryType = strtolower(explode(' ', $category->name)[0]);
+                $imageTypes = ['appetizers', 'main', 'desserts', 'drinks'];
+                $imageType = in_array($categoryType, $imageTypes) ? $categoryType : 'default';
+                $defaultImage = "default-menu-images/{$defaultImages[$imageType]}";
+                
+                // Tambahkan gambar default ke menu item
+                try {
+                    $menuItem
+                        ->addMedia(storage_path("app/public/{$defaultImage}"))
+                        ->preservingOriginal()
+                        ->withResponsiveImages()
+                        ->toMediaCollection('menu_items');
+                } catch (\Exception $e) {
+                    // Log error tapi lanjutkan proses
+                    if (app()->environment('local')) {
+                        echo "[WARNING] Gagal menambahkan gambar default untuk {$itemName}: " . $e->getMessage() . "\n";
+                    }
+                }
             }
         }
     }
