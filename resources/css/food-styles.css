@@ -1,51 +1,121 @@
 /* Food Card Styles */
 .food-card {
-    @apply rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transition: transform 300ms, box-shadow 300ms;
+}
+
+.food-card:hover {
+    transform: scale(1.05);
 }
 
 .food-card.green {
-    @apply bg-food-green text-food-text;
+    background-color: #4CAF50;
+    color: #FFFFFF;
 }
 
 .food-card.orange {
-    @apply bg-food-orange text-food-text;
+    background-color: #FFC107;
+    color: #FFFFFF;
 }
 
 .food-card .price-tag {
-    @apply bg-price-bubble text-food-dark font-bold rounded-full w-16 h-16 flex items-center justify-center absolute -top-4 -right-4;
+    background-color: #CDDC39;
+    color: #333333;
+    font-weight: bold;
+    border-radius: 9999px;
+    width: 4rem;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
 }
 
 .food-card .order-btn {
-    @apply bg-food-button text-white px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-colors duration-200;
+    background-color: #8D6E63;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: background-color 200ms;
+}
+
+.food-card .order-btn:hover {
+    background-color: rgba(141, 110, 99, 0.9);
 }
 
 .food-card .rating {
-    @apply text-yellow-400;
+    color: #F59E0B;
 }
 
 /* Responsive grid for food items */
 .food-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+@media (min-width: 768px) {
+    .food-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .food-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 /* Hero section */
 .food-hero {
-    @apply bg-cover bg-center py-16 px-4 text-center text-white;
+    background-size: cover;
+    background-position: center;
+    padding: 4rem 1rem;
+    text-align: center;
+    color: white;
     background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/food-hero.jpg');
 }
 
 .food-hero h1 {
-    @apply text-4xl font-bold mb-4;
+    font-size: 2.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
 }
 
 .food-hero p {
-    @apply text-xl mb-8 max-w-2xl mx-auto;
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    max-width: 42rem;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .food-hero .btn {
-    @apply inline-block bg-food-button text-white px-8 py-3 rounded-lg font-medium mx-2 mb-2 hover:bg-opacity-90 transition-colors duration-200;
+    display: inline-block;
+    background-color: #8D6E63;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    margin: 0 0.5rem 0.5rem 0.5rem;
+    transition: background-color 200ms;
+}
+
+.food-hero .btn:hover {
+    background-color: rgba(141, 110, 99, 0.9);
 }
 
 .food-hero .btn-outline {
-    @apply bg-transparent border-2 border-white hover:bg-white hover:bg-opacity-10;
+    background-color: transparent;
+    border: 2px solid white;
+}
+
+.food-hero .btn-outline:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }

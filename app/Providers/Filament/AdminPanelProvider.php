@@ -2,23 +2,19 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Widgets\StatsOverview;
 use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Navigation\NavigationItem;
 use Filament\Widgets;
-use Illuminate\Routing\Router;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
@@ -29,39 +25,20 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->id('admin')
             ->path('admin')
-            ->login()
             ->colors([
                 'primary' => Color::Amber,
-                'gray' => Color::Slate,
-                'danger' => Color::Rose,
-                'success' => Color::Emerald,
-                'warning' => Color::Orange,
-                'info' => Color::Blue,
             ])
-            ->font('Poppins')
-            ->favicon(asset('images/favicon.png'))
-            ->brandLogo(asset('images/logo.png'))
-            ->brandLogoHeight('2.5rem')
-            ->discoverResources(app_path('Filament/Resources'), 'App\\Filament\\Resources')
-            ->discoverPages(app_path('Filament/Pages'), 'App\\Filament\\Pages')
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->pages([
-                \Filament\Pages\Dashboard::class,
-                \App\Filament\Pages\Settings::class,
+                Pages\Dashboard::class,
             ])
-            ->navigationGroups([
-                'Settings',
-            ])
-            ->discoverWidgets(app_path('Filament/Widgets'), 'App\\Filament\\Widgets')
-            ->resources([
-                // Keep the SettingsResource for backward compatibility
-                \App\Filament\Resources\SettingsResource::class,
-            ])
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
-                StatsOverview::class,
                 Widgets\AccountWidget::class,
+                Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
-                'web',
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
@@ -74,11 +51,6 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ])
-            ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
-            ->spa()
-            ->sidebarCollapsibleOnDesktop()
-            ->maxContentWidth('full');
+            ]);
     }
 }

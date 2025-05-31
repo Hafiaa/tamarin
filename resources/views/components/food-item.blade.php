@@ -10,36 +10,36 @@
 <div class="food-card {{ $color }} p-6 relative">
     <!-- Price Tag -->
     <div class="price-tag">
-        <span>Rp{{ number_format($price, 0, ',', '.') }}</span>
+        <span>${{ number_format($price, 2) }}</span>
     </div>
     
     <!-- Food Image -->
-    <div class="mb-4 h-48 bg-white bg-opacity-20 rounded-lg overflow-hidden">
-        <img src="{{ $image }}" alt="{{ $name }}" class="w-full h-full object-cover">
+    <div style="height: 12rem; overflow: hidden; border-radius: 0.5rem; margin-bottom: 1rem;">
+        <img src="{{ $image }}" alt="{{ $name }}" style="width: 100%; height: 100%; object-fit: cover;">
     </div>
     
     <!-- Food Info -->
-    <h3 class="text-xl font-bold mb-2">{{ $name }}</h3>
+    <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">{{ $name }}</h3>
     
     <!-- Rating -->
-    <div class="rating mb-3">
-        @for($i = 1; $i <= 5; $i++)
-            @if($i <= $rating)
-                <i class="fas fa-star"></i>
-            @elseif($i - 0.5 <= $rating)
-                <i class="fas fa-star-half-alt"></i>
-            @else
-                <i class="far fa-star"></i>
-            @endif
-        @endfor
-        <span class="ml-1">{{ number_format($rating, 1) }}</span>
+    <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+        <div class="rating">
+            @for ($i = 0; $i < 5; $i++)
+                @if ($i < $rating)
+                    <i class="fas fa-star"></i>
+                @else
+                    <i class="far fa-star"></i>
+                @endif
+            @endfor
+        </div>
+        <span style="margin-left: 0.5rem; font-size: 0.875rem;">({{ $rating }})</span>
     </div>
     
     <!-- Description -->
-    <p class="text-sm mb-4">{{ $description }}</p>
+    <p style="margin-bottom: 1rem;">{{ $description }}</p>
     
     <!-- Order Button -->
-    <button class="order-btn w-full">
-        <i class="fas fa-shopping-cart mr-2"></i> Order Now
+    <button class="order-btn">
+        <i class="fas fa-shopping-cart" style="margin-right: 0.5rem;"></i> Add to Order
     </button>
 </div>
