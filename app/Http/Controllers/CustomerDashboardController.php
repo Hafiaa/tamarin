@@ -229,4 +229,28 @@ class CustomerDashboardController extends Controller
         return redirect()->route('customer.dashboard.profile.edit')
             ->with('success', 'Your profile has been updated successfully.');
     }
+    
+    /**
+     * Update the user's password.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+        
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+        
+        // Update the password
+        $user->update([
+            'password' => bcrypt($validated['password']),
+        ]);
+        
+        return redirect()->route('customer.dashboard.profile.edit')
+            ->with('success', 'Your password has been updated successfully.');
+    }
 }

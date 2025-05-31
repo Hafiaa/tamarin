@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Route;
 // Public Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// New Menu Page
+Route::view('/new-menu', 'menu')->name('menu.new');
+
 // Event Routes
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{package:slug}', [EventController::class, 'show'])->name('events.show');
@@ -52,6 +55,9 @@ Route::middleware(['auth'])->prefix('dashboard')->name('customer.dashboard.')->g
     // Profile Management
     Route::get('/profile', [CustomerDashboardController::class, 'editProfile'])->name('profile.edit');
     Route::put('/profile', [CustomerDashboardController::class, 'updateProfile'])->name('profile.update');
+    
+    // Password Update
+    Route::put('/password', [CustomerDashboardController::class, 'updatePassword'])->name('password.update');
 });
 
 // Authentication Routes

@@ -1,0 +1,51 @@
+/* Food Card Styles */
+.food-card {
+    @apply rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105;
+}
+
+.food-card.green {
+    @apply bg-food-green text-food-text;
+}
+
+.food-card.orange {
+    @apply bg-food-orange text-food-text;
+}
+
+.food-card .price-tag {
+    @apply bg-price-bubble text-food-dark font-bold rounded-full w-16 h-16 flex items-center justify-center absolute -top-4 -right-4;
+}
+
+.food-card .order-btn {
+    @apply bg-food-button text-white px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition-colors duration-200;
+}
+
+.food-card .rating {
+    @apply text-yellow-400;
+}
+
+/* Responsive grid for food items */
+.food-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4;
+}
+
+/* Hero section */
+.food-hero {
+    @apply bg-cover bg-center py-16 px-4 text-center text-white;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/food-hero.jpg');
+}
+
+.food-hero h1 {
+    @apply text-4xl font-bold mb-4;
+}
+
+.food-hero p {
+    @apply text-xl mb-8 max-w-2xl mx-auto;
+}
+
+.food-hero .btn {
+    @apply inline-block bg-food-button text-white px-8 py-3 rounded-lg font-medium mx-2 mb-2 hover:bg-opacity-90 transition-colors duration-200;
+}
+
+.food-hero .btn-outline {
+    @apply bg-transparent border-2 border-white hover:bg-white hover:bg-opacity-10;
+}
