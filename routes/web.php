@@ -31,9 +31,20 @@ Route::post('/contact', [CompanyProfileController::class, 'sendContactForm'])->n
 Route::get('/gallery', [CompanyProfileController::class, 'gallery'])->name('company.gallery');
 
 // Reservation Routes
-Route::get('/reservations/create/{packageId?}', [ReservationController::class, 'create'])->name('reservations.create');
-Route::post('/reservations/check-availability', [ReservationController::class, 'checkAvailability'])->name('reservations.check-availability');
-Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
+Route::middleware(['auth'])->group(function () {
+    // These routes require authentication
+    Route::post('/reservations/check-availability', [ReservationController::class, 'checkAvailability'])->name('reservations.check-availability');
+    Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
+    
+    // Reservation creation with auth check
+    Route::get('/reservations/create/{packageId?}', [ReservationController::class, 'create'])
+        ->name('reservations.create')
+        ->middleware('auth');
+});
+
+// Public route that redirects to login if not authenticated
+Route::get('/reservations/start/{packageId?}', [ReservationController::class, 'startReservation'])
+    ->name('reservations.start');
 
 // Custom Package Wizard Routes
 Route::prefix('custom-package')->name('custom-package.')->group(function () {

@@ -108,7 +108,7 @@
                         </div>
                         
                         <div class="package-actions">
-                            <a href="{{ route('reservations.create', $package->id) }}" class="btn btn-primary btn-lg me-2">Book This Package</a>
+                            <a href="{{ route('reservations.start', $package->id) }}" class="btn btn-primary btn-lg me-2">Book This Package</a>
                             <a href="{{ route('company.contact') }}" class="btn btn-outline-primary btn-lg">Ask a Question</a>
                         </div>
                     </div>
@@ -175,7 +175,7 @@
                                 <div class="card-footer bg-white border-top-0">
                                     <div class="d-grid gap-2 d-md-flex justify-content-md-between">
                                         <a href="{{ route('events.show', $relatedPackage->id) }}" class="btn btn-outline-primary">View Details</a>
-                                        <a href="{{ route('reservations.create', $relatedPackage->id) }}" class="btn btn-primary">Book Now</a>
+                                        <a href="{{ route('reservations.start', $relatedPackage->id) }}" class="btn btn-primary">Book Now</a>
                                     </div>
                                 </div>
                             </div>
@@ -195,7 +195,7 @@
                     <p class="cta-text mb-0">Contact us today to schedule your next memorable event at Tamacafe.</p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="{{ route('reservations.create', $package->id) }}" class="btn btn-light btn-lg">Book Now</a>
+                    <a href="{{ route('reservations.start', $package->id) }}" class="btn btn-light btn-lg">Book Now</a>
                 </div>
             </div>
         </div>

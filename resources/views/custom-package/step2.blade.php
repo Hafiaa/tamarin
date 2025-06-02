@@ -73,6 +73,9 @@
         <input type="hidden" name="groom_name" value="{{ old('groom_name') }}">
         <input type="hidden" name="special_requests" value="{{ old('special_requests') }}">
         
+        <!-- Hidden fields for services will be added here by JavaScript -->
+        <div id="servicesContainer"></div>
+        
         <div class="space-y-8">
             @foreach($serviceItems as $category => $items)
                 <div class="service-category">
@@ -86,6 +89,7 @@
                             @endphp
                             
                             <div class="service-item {{ $isSelected ? 'selected' : '' }}" 
+                                 data-service-id="{{ $item->id }}"
                                  x-data="{
                                     isSelected: {{ $isSelected ? 'true' : 'false' }},
                                     quantity: {{ $quantity }},
@@ -160,16 +164,6 @@
                                         </button>
                                     </div>
                                 </div>
-                                
-                                <!-- Hidden inputs for form submission -->
-                                <input type="hidden" name="services[{{ $item->id }}][service_item_id]" 
-                                       value="{{ $item->id }}" 
-                                       x-bind:disabled="!isSelected"
-                                       form="servicesForm">
-                                <input type="hidden" 
-                                       name="services[{{ $item->id }}][notes]" 
-                                       x-bind:disabled="!isSelected"
-                                       form="servicesForm">
                             </div>
                         @endforeach
                     </div>
@@ -184,8 +178,8 @@
                     Back
                 </button>
                 <div class="space-x-3">
-                    <button type="button" 
-                            @click="document.getElementById('servicesForm').submit()"
+                    <button type="submit" 
+                            @click="prepareForm()"
                             class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Review & Submit
                     </button>
@@ -197,6 +191,73 @@
 
 @push('scripts')
 <script>
+    function prepareForm(event) {
+        event.preventDefault();
+        const servicesContainer = document.getElementById('servicesContainer');
+        servicesContainer.innerHTML = ''; // Clear previous inputs
+        
+        // Get all selected services
+        const selectedServices = document.querySelectorAll('.service-item.selected');
+        
+        if (selectedServices.length === 0) {
+            alert('Silakan pilih setidaknya satu layanan');
+            return false;
+        }
+        
+        // Create a form data object to build the correct structure
+        const formData = new FormData();
+        
+        // Add step 1 data
+        formData.append('event_type_id', document.querySelector('input[name="event_type_id"]').value);
+        formData.append('event_date', document.querySelector('input[name="event_date"]').value);
+        formData.append('event_time', document.querySelector('input[name="event_time"]').value);
+        formData.append('guest_count', document.querySelector('input[name="guest_count"]').value);
+        formData.append('bride_name', document.querySelector('input[name="bride_name"]').value || '');
+        formData.append('groom_name', document.querySelector('input[name="groom_name"]').value || '');
+        formData.append('special_requests', document.querySelector('input[name="special_requests"]').value || '');
+        
+        // Add CSRF token
+        formData.append('_token', document.querySelector('input[name="_token"]').value);
+        
+        // Add services data with proper structure
+        selectedServices.forEach((service, index) => {
+            const serviceId = service.getAttribute('data-service-id');
+            const quantity = service.querySelector('.quantity-input')?.value || 1;
+            const notes = service.querySelector('.notes-input')?.value || '';
+            
+            formData.append(`services[${index}][service_item_id]`, serviceId);
+            formData.append(`services[${index}][quantity]`, quantity);
+            if (notes) {
+                formData.append(`services[${index}][notes]`, notes);
+            }
+        });
+        
+        // Submit the form using fetch API to ensure proper data structure
+        fetch('{{ route('custom-package.process-step2') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json().then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan. Silakan coba lagi.');
+        });
+    }
+    
     document.addEventListener('alpine:init', () => {
         Alpine.data('servicesForm', () => ({
             selectedServices: {},
@@ -204,12 +265,27 @@
             
             init() {
                 // Initialize with any previously selected services
-                @foreach(old('services', []) as $service)
+                @php
+                    $services = old('services', []);
+                    $validServices = [];
+                    
+                    foreach ($services as $service) {
+                        if (isset($service['service_item_id'])) {
+                            $validServices[] = [
+                                'service_item_id' => $service['service_item_id'],
+                                'quantity' => $service['quantity'] ?? 1,
+                                'price' => $service['price'] ?? 0
+                            ];
+                        }
+                    }
+                @endphp
+                
+                @foreach($validServices as $service)
                     this.selectedServices[{{ $service['service_item_id'] }}] = {
-                        quantity: {{ $service['quantity'] ?? 1 }},
-                        price: {{ $service['price'] ?? 0 }}
+                        quantity: {{ $service['quantity'] }},
+                        price: {{ $service['price'] }}
                     };
-                    this.totalPrice += ({{ $service['quantity'] ?? 1 }} * {{ $service['price'] ?? 0 }});
+                    this.totalPrice += ({{ $service['quantity'] }} * {{ $service['price'] }});
                 @endforeach
                 
                 this.$watch('selectedServices', value => {

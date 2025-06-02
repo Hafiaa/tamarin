@@ -20,7 +20,27 @@ class ReservationController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth')->except(['create', 'checkAvailability']);
+        $this->middleware('auth')->except(['startReservation', 'create', 'checkAvailability']);
+    }
+    
+    /**
+     * Start the reservation process (public entry point)
+     * Redirects to login if not authenticated, otherwise to reservation form
+     *
+     * @param  int  $packageId
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function startReservation($packageId = null)
+    {
+        // If user is not authenticated, redirect to login with intended URL
+        if (!auth()->check()) {
+            return redirect()->route('login', [
+                'intended' => route('reservations.create', ['packageId' => $packageId])
+            ]);
+        }
+        
+        // If authenticated, redirect to the reservation form
+        return redirect()->route('reservations.create', ['packageId' => $packageId]);
     }
     
     /**

@@ -19,6 +19,10 @@
 
                     <form method="POST" action="{{ route('login') }}">
                         @csrf
+                        
+                        @if(request()->has('intended'))
+                            <input type="hidden" name="intended" value="{{ request('intended') }}">
+                        @endif
 
                         <div class="mb-3">
                             <label for="email" class="form-label">Email Address</label>

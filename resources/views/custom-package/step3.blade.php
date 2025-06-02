@@ -62,6 +62,10 @@
             <input type="hidden" name="services[{{ $index }}][notes]" value="{{ $service['notes'] ?? '' }}">
         @endforeach
         
+        <!-- Budget and Reference Files -->
+        <input type="hidden" name="budget" value="{{ old('budget', 0) }}" id="budgetInput">
+        <input type="hidden" name="terms" value="1" id="termsInput">
+        
         <div class="space-y-8">
             <!-- Event Details -->
             <div class="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -239,16 +243,16 @@
             <!-- Navigation Buttons -->
             <div class="flex justify-between pt-6">
                 <button type="button" 
-                        onclick="window.history.back()"
-                        class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    onclick="window.location.href='{{ route('custom-package.step2') }}'"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Back
                 </button>
-                <div class="space-x-3">
-                    <button type="submit" 
-                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Submit Request
-                    </button>
-                </div>
+                <button type="submit" 
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    id="submitButton">
+                    Submit Reservation
+                </button>
+            </div>
             </div>
         </div>
     </form>
@@ -257,6 +261,125 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Format budget input
+        const budgetInput = document.getElementById('budget');
+        if (budgetInput) {
+            budgetInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                document.getElementById('budgetInput').value = value;
+            });
+        }
+        
+        // Handle file previews
+        const fileInput = document.getElementById('reference_files');
+        const filePreview = document.getElementById('file-preview');
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                filePreview.innerHTML = '';
+                
+                if (this.files.length > 0) {
+                    Array.from(this.files).forEach(file => {
+                        const filePreviewItem = document.createElement('div');
+                        filePreviewItem.className = 'file-preview';
+                        
+                        let previewContent = '';
+                        
+                        if (file.type.startsWith('image/')) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                filePreviewItem.innerHTML = `
+                                    <img src="${e.target.result}" alt="${file.name}">
+                                    <div class="file-info">
+                                        <div class="font-medium truncate">${file.name}</div>
+                                        <div>${(file.size / 1024).toFixed(1)} KB</div>
+                                    </div>
+                                    <div class="file-remove">×</div>
+                                `;
+                                
+                                // Add remove functionality
+                                const removeBtn = filePreviewItem.querySelector('.file-remove');
+                                removeBtn.addEventListener('click', function() {
+                                    filePreviewItem.remove();
+                                    // Remove the file from the input
+                                    const dt = new DataTransfer();
+                                    const input = fileInput;
+                                    const { files } = input;
+                                    
+                                    for (let i = 0; i < files.length; i++) {
+                                        if (files[i].name !== file.name) {
+                                            dt.items.add(files[i]);
+                                        }
+                                    }
+                                    
+                                    input.files = dt.files;
+                                });
+                                
+                                filePreview.appendChild(filePreviewItem);
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            filePreviewItem.innerHTML = `
+                                <div class="p-2 bg-gray-100 rounded">
+                                    <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="file-info">
+                                    <div class="font-medium truncate">${file.name}</div>
+                                    <div>${(file.size / 1024).toFixed(1)} KB</div>
+                                </div>
+                                <div class="file-remove">×</div>
+                            `;
+                            
+                            // Add remove functionality
+                            const removeBtn = filePreviewItem.querySelector('.file-remove');
+                            removeBtn.addEventListener('click', function() {
+                                filePreviewItem.remove();
+                                // Remove the file from the input
+                                const dt = new DataTransfer();
+                                const input = fileInput;
+                                const { files } = input;
+                                
+                                for (let i = 0; i < files.length; i++) {
+                                    if (files[i].name !== file.name) {
+                                        dt.items.add(files[i]);
+                                    }
+                                }
+                                
+                                input.files = dt.files;
+                            });
+                            
+                            filePreview.appendChild(filePreviewItem);
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Form submission handling
+        const form = document.getElementById('reviewForm');
+        const submitButton = document.getElementById('submitButton');
+        
+        if (form && submitButton) {
+            form.addEventListener('submit', function(e) {
+                if (!document.getElementById('terms').checked) {
+                    e.preventDefault();
+                    alert('Please agree to the terms and conditions');
+                    return false;
+                }
+                
+                // Disable the submit button to prevent double submission
+                submitButton.disabled = true;
+                submitButton.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                `;
+            });
+        }
         // Handle file preview
         const fileInput = document.getElementById('reference_files');
         const filePreview = document.getElementById('filePreview');

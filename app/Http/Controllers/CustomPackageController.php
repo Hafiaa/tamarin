@@ -60,13 +60,25 @@ class CustomPackageController extends Controller
             ->get()
             ->groupBy('type');
             
-        $selectedServices = collect($request->old('services', []))->mapWithKeys(function ($item) {
-            return [$item['service_item_id'] => $item['quantity']];
-        });
+        // Initialize selected services array
+        $selectedServices = [];
+        
+        // Process old input if it exists
+        if ($request->old('services')) {
+            foreach ($request->old('services') as $service) {
+                if (isset($service['service_item_id'])) {
+                    $selectedServices[$service['service_item_id']] = $service['quantity'] ?? 1;
+                }
+            }
+        }
         
         $currentStep = 2;
         
-        return view('custom-package.step2', compact('serviceItems', 'selectedServices', 'currentStep'));
+        return view('custom-package.step2', [
+            'serviceItems' => $serviceItems,
+            'selectedServices' => $selectedServices,
+            'currentStep' => $currentStep
+        ]);
     }
     
     /**
@@ -79,7 +91,39 @@ class CustomPackageController extends Controller
             'services.*.service_item_id' => 'required|exists:service_items,id',
             'services.*.quantity' => 'required|integer|min:1',
             'services.*.notes' => 'nullable|string',
+        ], [
+            'services.required' => 'Pilih setidaknya satu layanan',
+            'services.min' => 'Pilih setidaknya satu layanan',
+            'services.*.service_item_id.required' => 'ID layanan tidak valid',
+            'services.*.service_item_id.exists' => 'Layanan yang dipilih tidak valid',
+            'services.*.quantity.required' => 'Jumlah harus diisi',
+            'services.*.quantity.min' => 'Jumlah minimal 1',
         ]);
+
+        // Ensure we have the service items data for the review page
+        $serviceItems = ServiceItem::whereIn('id', collect($validated['services'])->pluck('service_item_id'))
+            ->get()
+            ->keyBy('id');
+
+        // Store the services data in the session for the review page
+        $servicesData = [];
+        foreach ($validated['services'] as $service) {
+            $serviceItem = $serviceItems->get($service['service_item_id']);
+            if ($serviceItem) {
+                $servicesData[] = [
+                    'service_item_id' => $serviceItem->id,
+                    'name' => $serviceItem->name,
+                    'description' => $serviceItem->description,
+                    'price' => $serviceItem->base_price,
+                    'quantity' => $service['quantity'],
+                    'notes' => $service['notes'] ?? null,
+                    'total' => $serviceItem->base_price * $service['quantity']
+                ];
+            }
+        }
+
+        // Store in session for the review page
+        $request->session()->put('custom_package.services', $servicesData);
         
         return redirect()->route('custom-package.step3')
             ->withInput();
@@ -90,34 +134,80 @@ class CustomPackageController extends Controller
      */
     public function step3(Request $request)
     {
-        if (!$request->old()) {
-            return redirect()->route('custom-package.step1');
+        // Redirect to step 1 if no session data
+        if (!$request->session()->has('_old_input')) {
+            return redirect()->route('custom-package.step1')
+                ->with('error', 'Silakan isi detail acara terlebih dahulu');
         }
         
-        $serviceItems = ServiceItem::whereIn('id', collect($request->old('services'))->pluck('service_item_id'))
+        // Get event type ID from session
+        $eventTypeId = $request->old('event_type_id');
+        if (!$eventTypeId) {
+            return redirect()->route('custom-package.step1')
+                ->with('error', 'Tipe acara tidak valid');
+        }
+        
+        // Get event type with translations
+        $eventType = EventType::with(['translations' => function($query) {
+            $query->where('locale', app()->getLocale())
+                  ->orWhere('locale', 'id')
+                  ->orderByRaw("FIELD(locale, '".app()->getLocale()."', 'id')");
+        }])->find($eventTypeId);
+        
+        if (!$eventType) {
+            return redirect()->route('custom-package.step1')
+                ->with('error', 'Tipe acara tidak ditemukan');
+        }
+        
+        // Get services data from session
+        $services = $request->session()->get('custom_package.services', []);
+        
+        if (empty($services)) {
+            return redirect()->route('custom-package.step2')
+                ->with('error', 'Silakan pilih setidaknya satu layanan')
+                ->withInput();
+        }
+        
+        // Get service items for additional data
+        $serviceItems = ServiceItem::whereIn('id', collect($services)->pluck('service_item_id'))
             ->get()
             ->keyBy('id');
-            
-        $services = collect($request->old('services'))->map(function ($item) use ($serviceItems) {
-            $service = $serviceItems->get($item['service_item_id']);
-            $quantity = $item['quantity'];
-            $unitPrice = $service->base_price;
-            $total = $unitPrice * $quantity;
-            
-            return [
-                'service_item' => $service,
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'total_price' => $total,
-                'notes' => $item['notes'] ?? null,
-            ];
-        });
         
-        $subtotal = $services->sum('total_price');
+        // Enrich services data with additional information
+        $enrichedServices = [];
+        $totalPrice = 0;
         
-        $currentStep = 3;
+        foreach ($services as $service) {
+            $serviceItem = $serviceItems->get($service['service_item_id']);
+            if ($serviceItem) {
+                $serviceTotal = $serviceItem->base_price * $service['quantity'];
+                $totalPrice += $serviceTotal;
+                
+                $enrichedServices[] = [
+                    'id' => $serviceItem->id,
+                    'name' => $serviceItem->name,
+                    'description' => $serviceItem->description,
+                    'price' => $serviceItem->base_price,
+                    'quantity' => $service['quantity'],
+                    'notes' => $service['notes'] ?? null,
+                    'total' => $serviceTotal,
+                    'image' => $serviceItem->image ? asset('storage/' . $serviceItem->image) : null
+                ];
+            }
+        }
         
-        return view('custom-package.step3', compact('services', 'subtotal', 'currentStep'));
+        // Store the enriched services in session for the store method
+        $request->session()->put('custom_package.enriched_services', $enrichedServices);
+        
+        return view('custom-package.step3', [
+            'currentStep' => 3,
+            'eventType' => $eventType,
+            'services' => $enrichedServices,
+            'totalPrice' => $totalPrice,
+            'budget' => $request->old('budget'),
+            'reference_files' => $request->old('reference_files'),
+            'terms' => $request->old('terms', false)
+        ]);
     }
     
     /**
@@ -136,88 +226,147 @@ class CustomPackageController extends Controller
             'groom_name' => 'nullable|string|max:255',
             'special_requests' => 'nullable|string',
             
-            // Step 2 fields
-            'services' => 'required|array|min:1',
-            'services.*.service_item_id' => 'required|exists:service_items,id',
-            'services.*.quantity' => 'required|integer|min:1',
-            'services.*.notes' => 'nullable|string',
-            
             // Step 3 fields
             'budget' => 'nullable|numeric|min:0',
-            'reference_files' => 'nullable|array',
+            'reference_files' => 'nullable|array|max:5',
             'reference_files.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
             'terms' => 'required|accepted',
+        ], [
+            'event_type_id.required' => 'Silakan pilih tipe acara',
+            'event_date.required' => 'Tanggal acara harus diisi',
+            'event_date.after_or_equal' => 'Tanggal tidak boleh di masa lalu',
+            'event_time.required' => 'Waktu acara harus diisi',
+            'guest_count.required' => 'Jumlah tamu harus diisi',
+            'guest_count.min' => 'Jumlah tamu minimal 1',
+            'terms.accepted' => 'Anda harus menyetujui syarat dan ketentuan',
+            'reference_files.max' => 'Maksimal 5 file yang diizinkan',
+            'reference_files.*.mimes' => 'Format file yang diizinkan: jpg, jpeg, png, pdf, doc, docx',
+            'reference_files.*.max' => 'Ukuran file maksimal 5MB',
         ]);
         
+        // Get services from session instead of request
+        $services = $request->session()->get('custom_package.enriched_services', []);
+        
+        if (empty($services)) {
+            return redirect()->route('custom-package.step2')
+                ->with('error', 'Silakan pilih setidaknya satu layanan')
+                ->withInput();
+        }
+        
         // Start transaction
-        return DB::transaction(function () use ($request) {
-            // Create the reservation
-            $reservation = new Reservation([
-                'user_id' => auth()->id(),
-                'event_type_id' => $request->event_type_id,
-                'event_date' => $request->event_date,
-                'event_time' => $request->event_time,
-                'guest_count' => $request->guest_count,
-                'bride_name' => $request->bride_name,
-                'groom_name' => $request->groom_name,
-                'special_requests' => $request->special_requests,
-                'budget' => $request->budget,
-                'status' => Reservation::STATUS_PENDING,
-                'notes' => $request->notes,
-            ]);
-            
-            $reservation->save();
-            
-            // Add custom package items
-            $serviceItems = ServiceItem::whereIn('id', collect($request->services)->pluck('service_item_id'))->get()->keyBy('id');
-            
-            foreach ($request->services as $service) {
-                $serviceItem = $serviceItems->get($service['service_item_id']);
+        try {
+            return DB::transaction(function () use ($request, $services) {
+                // Get the event type
+                $eventType = EventType::findOrFail($request->event_type_id);
                 
-                $reservation->customPackageItems()->create([
-                    'service_item_id' => $serviceItem->id,
-                    'quantity' => $service['quantity'],
-                    'unit_price' => $serviceItem->base_price,
-                    'total_price' => $serviceItem->base_price * $service['quantity'],
-                    'notes' => $service['notes'] ?? null,
+                // Create the reservation
+                $reservation = new Reservation([
+                    'user_id' => auth()->id(),
+                    'event_type_id' => $request->event_type_id,
+                    'event_date' => $request->event_date,
+                    'event_time' => $request->event_time,
+                    'guest_count' => $request->guest_count,
+                    'bride_name' => $request->bride_name,
+                    'groom_name' => $request->groom_name,
+                    'special_requests' => $request->special_requests,
+                    'budget' => $request->budget ?? 0,
+                    'status' => Reservation::STATUS_PENDING,
+                    'notes' => $request->notes ?? null,
+                    'total_price' => 0, // Will be calculated below
                 ]);
-            }
-            
-            // Handle file uploads
-            if ($request->hasFile('reference_files')) {
-                $referenceFiles = [];
                 
-                foreach ($request->file('reference_files') as $file) {
-                    $path = $file->store('reference-files/' . $reservation->id, 'public');
-                    $referenceFiles[] = [
-                        'name' => $file->getClientOriginalName(),
-                        'path' => $path,
-                        'size' => $file->getSize(),
-                        'mime' => $file->getMimeType(),
-                    ];
+                $reservation->save();
+                
+                // Add custom package items
+                $totalPrice = 0;
+                
+                foreach ($services as $service) {
+                    $itemTotal = $service['price'] * $service['quantity'];
+                    $totalPrice += $itemTotal;
+                    
+                    $reservation->customPackageItems()->create([
+                        'service_item_id' => $service['id'],
+                        'quantity' => $service['quantity'],
+                        'unit_price' => $service['price'],
+                        'total_price' => $itemTotal,
+                        'notes' => $service['notes'] ?? null,
+                    ]);
                 }
                 
-                $reservation->reference_files = $referenceFiles;
+                // Handle file uploads
+                $referenceFiles = [];
+                if ($request->hasFile('reference_files')) {
+                    foreach ($request->file('reference_files') as $file) {
+                        try {
+                            $path = $file->store('reference-files/' . $reservation->id, 'public');
+                            $referenceFiles[] = [
+                                'name' => $file->getClientOriginalName(),
+                                'path' => $path,
+                                'size' => $file->getSize(),
+                                'mime' => $file->getMimeType(),
+                                'uploaded_at' => now()->toDateTimeString(),
+                            ];
+                        } catch (\Exception $e) {
+                            \Log::error('Error uploading file: ' . $e->getMessage());
+                            // Continue with other files if one fails
+                            continue;
+                        }
+                    }
+                }
+                
+                // Update reservation with total price and reference files
+                $reservation->total_price = $totalPrice;
+                if (!empty($referenceFiles)) {
+                    $reservation->reference_files = $referenceFiles;
+                }
                 $reservation->save();
-            }
+                
+                // Clear the session data
+                $request->session()->forget([
+                    'custom_package.services',
+                    'custom_package.enriched_services',
+                    '_old_input'
+                ]);
+                
+                // TODO: Send notifications
+                
+                return redirect()->route('custom-package.thank-you', $reservation->id);
+            });
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error creating reservation: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
             
-            // Calculate and save total price
-            $reservation->total_price = $reservation->custom_package_total;
-            $reservation->save();
-            
-            // TODO: Send notifications
-            
-            return redirect()->route('custom-package.thank-you', $reservation->id);
-        });
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Terjadi kesalahan saat memproses pemesanan. Silakan coba lagi.']);
+        }
     }
     
     /**
-     * Show the thank you page
+     * Show the thank you page after successful submission
+     *
+     * @param  \App\Models\Reservation  $reservation
+     * @return \Illuminate\View\View
      */
     public function thankYou(Reservation $reservation)
     {
+        // Ensure the authenticated user can only view their own reservation
         if ($reservation->user_id !== auth()->id()) {
-            abort(403);
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Load the necessary relationships
+        $reservation->load([
+            'eventType',
+            'customPackageItems.serviceItem',
+            'user'
+        ]);
+        
+        // Calculate total price if not already set
+        if (!$reservation->total_price) {
+            $reservation->total_price = $reservation->custom_package_total;
+            $reservation->save();
         }
         
         return view('custom-package.thank-you', compact('reservation'));
