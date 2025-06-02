@@ -17,7 +17,9 @@ class ReservationRevision extends Model
      */
     protected $fillable = [
         'reservation_id',
-        'revision_details',
+        'user_id',
+        'title',
+        'description',
         'changes',
         'status',
         'admin_notes',
@@ -32,6 +34,8 @@ class ReservationRevision extends Model
     protected $casts = [
         'changes' => 'array',
         'price_adjustment' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
     
     /**
@@ -40,5 +44,13 @@ class ReservationRevision extends Model
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+    
+    /**
+     * Get the user who made the revision.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

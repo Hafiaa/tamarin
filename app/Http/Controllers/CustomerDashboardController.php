@@ -56,11 +56,11 @@ class CustomerDashboardController extends Controller
         $user = Auth::user();
         
         $reservations = Reservation::where('user_id', $user->id)
-            ->with(['eventType', 'packageTemplate'])
+            ->with(['eventType', 'payments', 'customPackageItems.serviceItem'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
             
-        return view('customer.reservations', compact('reservations'));
+        return view('customer.reservations.index', compact('reservations'));
     }
     
     /**
@@ -71,18 +71,65 @@ class CustomerDashboardController extends Controller
      */
     public function showReservation($id)
     {
-        $user = Auth::user();
+        $reservation = Reservation::with([
+                'eventType', 
+                'payments', 
+                'revisions.user',
+                'customPackageItems.serviceItem'
+            ])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
+            
+        return view('customer.reservations.show', compact('reservation'));
+    }
+    
+    /**
+     * Cancel a reservation.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function cancelReservation(Request $request, $id)
+    {
+        $reservation = Reservation::where('user_id', Auth::id())
+            ->whereIn('status', ['pending_admin_review', 'confirmed', 'pending_payment'])
+            ->findOrFail($id);
+            
+        $request->validate([
+            'cancellation_reason' => 'required|string|max:1000',
+        ]);
         
-        $reservation = Reservation::where('user_id', $user->id)
-            ->where('id', $id)
-            ->with(['eventType', 'packageTemplate', 'payments', 'customPackage'])
-            ->firstOrFail();
+        try {
+            DB::beginTransaction();
             
-        $revisions = ReservationRevision::where('reservation_id', $reservation->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+            // Update reservation status
+            $reservation->update([
+                'status' => 'cancelled',
+                'cancellation_reason' => $request->cancellation_reason,
+                'cancelled_at' => now(),
+            ]);
             
-        return view('customer.reservation-detail', compact('reservation', 'revisions'));
+            // Add revision history
+            $reservation->revisions()->create([
+                'user_id' => Auth::id(),
+                'title' => 'Reservation Cancelled',
+                'description' => 'Reservation was cancelled by customer. Reason: ' . $request->cancellation_reason,
+            ]);
+            
+            // TODO: Send notification to admin and customer
+            
+            DB::commit();
+            
+            return redirect()->route('customer.dashboard.reservations.show', $reservation->id)
+                ->with('success', 'Reservation has been cancelled successfully.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error cancelling reservation: ' . $e->getMessage());
+            
+            return back()->with('error', 'Failed to cancel reservation. Please try again.');
+        }
     }
     
     /**

@@ -7,6 +7,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\CustomPackageController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -34,6 +35,24 @@ Route::get('/reservations/create/{packageId?}', [ReservationController::class, '
 Route::post('/reservations/check-availability', [ReservationController::class, 'checkAvailability'])->name('reservations.check-availability');
 Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
 
+// Custom Package Wizard Routes
+Route::prefix('custom-package')->name('custom-package.')->group(function () {
+    // Step 1: Event Details
+    Route::get('/step1', [CustomPackageController::class, 'step1'])->name('step1');
+    Route::post('/process-step1', [CustomPackageController::class, 'processStep1'])->name('process-step1');
+    
+    // Step 2: Service Selection
+    Route::get('/step2', [CustomPackageController::class, 'step2'])->name('step2');
+    Route::post('/process-step2', [CustomPackageController::class, 'processStep2'])->name('process-step2');
+    
+    // Step 3: Review & Submit
+    Route::get('/step3', [CustomPackageController::class, 'step3'])->name('step3');
+    Route::post('/', [CustomPackageController::class, 'store'])->name('store');
+    
+    // Thank You Page
+    Route::get('/thank-you/{reservation}', [CustomPackageController::class, 'thankYou'])->name('thank-you');
+});
+
 // Customer Dashboard Routes (Protected)
 Route::middleware(['auth'])->prefix('dashboard')->name('customer.dashboard.')->group(function () {
     Route::get('/', [CustomerDashboardController::class, 'index'])->name('index');
@@ -41,6 +60,7 @@ Route::middleware(['auth'])->prefix('dashboard')->name('customer.dashboard.')->g
     // Reservations Management
     Route::get('/reservations', [CustomerDashboardController::class, 'reservations'])->name('reservations');
     Route::get('/reservations/{id}', [CustomerDashboardController::class, 'showReservation'])->name('reservations.show');
+    Route::put('/reservations/{id}/cancel', [CustomerDashboardController::class, 'cancelReservation'])->name('reservations.cancel');
     
     // Payments Management
     Route::get('/payments', [CustomerDashboardController::class, 'payments'])->name('payments');

@@ -147,21 +147,29 @@ class MenuItemResource extends Resource
                 TextColumn::make('type')
                     ->label('Tipe')
                     ->formatStateUsing(function (string $state): string {
-                        return match ($state) {
-                            'food' => 'Makanan',
-                            'beverage' => 'Minuman',
-                            'both' => 'Keduanya',
-                            default => $state,
-                        };
+                        switch ($state) {
+                            case 'food':
+                                return 'Makanan';
+                            case 'beverage':
+                                return 'Minuman';
+                            case 'both':
+                                return 'Keduanya';
+                            default:
+                                return $state;
+                        }
                     })
                     ->badge()
                     ->color(function (string $state): string {
-                        return match ($state) {
-                            'food' => 'warning',
-                            'beverage' => 'info',
-                            'both' => 'success',
-                            default => 'gray',
-                        };
+                        switch ($state) {
+                            case 'food':
+                                return 'warning';
+                            case 'beverage':
+                                return 'info';
+                            case 'both':
+                                return 'success';
+                            default:
+                                return 'gray';
+                        }
                     }),
                     
                 IconColumn::make('is_available')
@@ -176,19 +184,19 @@ class MenuItemResource extends Resource
                     ->label('Urutan')
                     ->numeric()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(true),
                     
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(true),
                     
                 TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(true),
             ])
             ->filters([
                 SelectFilter::make('menu_category_id')

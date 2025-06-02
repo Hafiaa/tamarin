@@ -20,9 +20,13 @@ class ServiceItem extends Model implements HasMedia
     protected $fillable = [
         'name',
         'description',
-        'price',
-        'category',
-        'is_available',
+        'base_price',
+        'type',
+        'is_active',
+        'image',
+        'options',
+        'min_quantity',
+        'max_quantity',
     ];
     
     /**
@@ -31,18 +35,68 @@ class ServiceItem extends Model implements HasMedia
      * @var array<string, string>
      */
     protected $casts = [
-        'price' => 'decimal:2',
-        'is_available' => 'boolean',
+        'base_price' => 'decimal:2',
+        'is_active' => 'boolean',
+        'options' => 'array',
+        'min_quantity' => 'integer',
+        'max_quantity' => 'integer',
     ];
     
     /**
-     * The package templates that belong to the service item.
+     * The "booting" method of the model.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($serviceItem) {
+            if (empty($serviceItem->type)) {
+                $serviceItem->type = 'service';
+            }
+            if (empty($serviceItem->min_quantity)) {
+                $serviceItem->min_quantity = 1;
+            }
+        });
+    }
+    
+    /**
+     * The package templates that include this service item.
      */
     public function packageTemplates(): BelongsToMany
     {
         return $this->belongsToMany(PackageTemplate::class, 'package_template_service_item')
             ->withPivot('quantity', 'custom_price', 'notes')
             ->withTimestamps();
+    }
+    
+    /**
+     * The custom package items that use this service item.
+     */
+    public function customPackageItems()
+    {
+        return $this->hasMany(CustomPackageItem::class);
+    }
+    
+    /**
+     * Scope a query to only include active service items.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+    
+    /**
+     * Scope a query to only include items of a specific type.
+     */
+    public function scopeOfType($query, $type)
+    {
+        return $query->where('type', $type);
+    }
+    
+    /**
+     * Calculate the total price based on quantity.
+     */
+    public function calculateTotalPrice(int $quantity = 1): float
+    {
+        return $this->base_price * $quantity;
     }
     
     /**

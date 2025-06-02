@@ -112,13 +112,13 @@ class MenuCategoryResource extends Resource
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(true),
                     
                 TextColumn::make('updated_at')
                     ->label('Diperbarui Pada')
                     ->dateTime('d M Y')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->toggleable(true),
             ])
             ->filters([
                 TernaryFilter::make('is_active')

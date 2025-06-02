@@ -113,7 +113,18 @@ class Reservation extends Model implements HasMedia
         'notes',
         'admin_notes',
         'estimated_revenue',
+        'reference_files',
+        'budget',
+        'cancellation_reason',
+        'cancelled_at',
     ];
+    
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['custom_package_total'];
     
     protected $attributes = [
         'status' => self::STATUS_PENDING,
@@ -127,9 +138,11 @@ class Reservation extends Model implements HasMedia
     protected $casts = [
         'event_date' => 'date',
         'event_time' => 'datetime',
+        'cancelled_at' => 'datetime',
         'total_price' => 'decimal:2',
         'estimated_revenue' => 'decimal:2',
         'guest_count' => 'integer',
+        'reference_files' => 'array',
     ];
     
     protected static function booted()
@@ -166,11 +179,19 @@ class Reservation extends Model implements HasMedia
     }
     
     /**
-     * Get the custom package associated with the reservation.
+     * Get the custom package items for the reservation.
      */
-    public function customPackage(): HasOne
+    public function customPackageItems()
     {
-        return $this->hasOne(CustomPackage::class);
+        return $this->hasMany(CustomPackageItem::class);
+    }
+    
+    /**
+     * Get the total price of all custom package items.
+     */
+    public function getCustomPackageTotalAttribute()
+    {
+        return $this->customPackageItems->sum('total_price');
     }
     
     /**

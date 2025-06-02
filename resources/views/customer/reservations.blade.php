@@ -64,9 +64,14 @@
                                                 @if($reservation->packageTemplate)
                                                     <br>
                                                     <small class="text-muted">{{ $reservation->packageTemplate->name }}</small>
-                                                @else
+                                                @elseif($reservation->customPackageItems->count() > 0)
                                                     <br>
-                                                    <small class="text-muted">Custom Package</small>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="badge bg-purple-100 text-purple-800 me-2">Custom</span>
+                                                        <small class="text-muted">
+                                                            {{ $reservation->customPackageItems->count() }} service{{ $reservation->customPackageItems->count() > 1 ? 's' : '' }}
+                                                        </small>
+                                                    </div>
                                                 @endif
                                             </td>
                                             <td>
@@ -90,10 +95,16 @@
                                                     $paidAmount = $reservation->payments->where('status', 'approved')->sum('amount');
                                                     $paymentPercentage = $reservation->total_price > 0 ? ($paidAmount / $reservation->total_price) * 100 : 0;
                                                 @endphp
-                                                <div class="progress" style="height: 10px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ $paymentPercentage }}%;" aria-valuenow="{{ $paymentPercentage }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-                                                <small class="d-block mt-1">{{ number_format($paidAmount, 0, ',', '.') }} / {{ number_format($reservation->total_price, 0, ',', '.') }} IDR</small>
+                                                @if($reservation->total_price > 0)
+                                                    <div class="progress" style="height: 10px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ $paymentPercentage }}%;" aria-valuenow="{{ $paymentPercentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                    <small class="d-block mt-1">
+                                                        {{ number_format($paidAmount, 0, ',', '.') }} / {{ number_format($reservation->total_price, 0, ',', '.') }} IDR
+                                                    </small>
+                                                @else
+                                                    <span class="badge bg-secondary">No payment required</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="btn-group">
