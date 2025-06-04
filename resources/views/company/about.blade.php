@@ -254,7 +254,7 @@
                     <p class="cta-text mb-0">Visit us today or book your next event with us.</p>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="{{ route('reservations.create') }}" class="btn btn-light btn-lg me-2 mb-2 mb-md-0">Book an Event</a>
+                    <a href="{{ route('events.index') }}" class="btn btn-light btn-lg me-2 mb-2 mb-md-0">Book an Event</a>
                     <a href="{{ route('company.contact') }}" class="btn btn-outline-light btn-lg">Contact Us</a>
                 </div>
             </div>

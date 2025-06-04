@@ -12,7 +12,7 @@
                 <p class="text-muted mb-0">View and manage your event reservations</p>
             </div>
             <div class="col-md-4 text-md-end">
-                <a href="{{ route('reservations.create') }}" class="btn btn-primary">
+                <a href="{{ route('events.index') }}" class="btn btn-primary">
                     <i class="fas fa-plus-circle me-2"></i> Book New Event
                 </a>
             </div>
@@ -139,7 +139,7 @@
                     <img src="{{ asset('images/no-events.svg') }}" alt="No Reservations" class="img-fluid mb-3" style="max-width: 200px;">
                     <h4>No Reservations Found</h4>
                     <p class="text-muted">You haven't made any reservations yet.</p>
-                    <a href="{{ route('reservations.create') }}" class="btn btn-primary">Book an Event</a>
+                    <a href="{{ route('events.index') }}" class="btn btn-primary">Book an Event</a>
                 </div>
             @endif
         </div>
