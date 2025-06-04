@@ -84,12 +84,13 @@
                 </li>
             </ul>
             <div class="d-flex align-items-center">
-                <!-- Create Custom Package Button -->
-                <a href="{{ route('custom-package.step1') }}" class="btn btn-primary me-3">
-                    <i class="fas fa-magic me-1"></i> Create Custom Package
-                </a>
-                
                 @auth
+                    <!-- Create Custom Package Button -->
+                    <a href="{{ route('custom-package.step1') }}" class="btn btn-primary me-3">
+                        <i class="fas fa-magic me-1"></i> Create Custom Package
+                    </a>
+                
+                    <div class="dropdown">
                     <div class="dropdown">
                         <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             {{ Auth::user()->name }}

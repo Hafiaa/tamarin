@@ -30,6 +30,9 @@ Route::get('/contact', [CompanyProfileController::class, 'contact'])->name('comp
 Route::post('/contact', [CompanyProfileController::class, 'sendContactForm'])->name('company.contact.send');
 Route::get('/gallery', [CompanyProfileController::class, 'gallery'])->name('company.gallery');
 
+// Blocked Dates Routes
+Route::get('/blocked-dates', [ReservationController::class, 'getBlockedDates'])->name('blocked-dates.list');
+
 // Reservation Routes
 Route::middleware(['auth'])->group(function () {
     // These routes require authentication

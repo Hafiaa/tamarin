@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
 
 class ReservationController extends Controller
 {
@@ -20,7 +21,76 @@ class ReservationController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth')->except(['startReservation', 'create', 'checkAvailability']);
+        $this->middleware('auth')->except(['startReservation', 'create', 'checkAvailability', 'getBlockedDates']);
+    }
+    
+    /**
+     * Get all blocked dates for the date picker
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBlockedDates()
+    {
+        try {
+            // Log that the method was called
+            \Log::info('Fetching blocked dates...');
+            
+            // Get all blocked dates that are not expired
+            $blockedDates = BlockedDate::where(function($query) {
+                $query->where('date', '>=', now()->toDateString())
+                      ->orWhere('is_recurring_yearly', true);
+            })->get()
+            ->map(function($blockedDate) {
+                if ($blockedDate->is_recurring_yearly) {
+                    // For recurring dates, we need to check the next 2 years
+                    $currentYear = now()->year;
+                    $dates = [];
+                    
+                    for ($i = 0; $i < 2; $i++) {
+                        try {
+                            $date = Carbon::create($currentYear + $i, $blockedDate->date->month, $blockedDate->date->day);
+                            if ($date >= now()->startOfDay()) {
+                                $dates[] = $date->format('Y-m-d');
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('Error processing recurring date:', [
+                                'blocked_date_id' => $blockedDate->id,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                    
+                    return $dates;
+                }
+                
+                return $blockedDate->date->format('Y-m-d');
+            })
+            ->flatten()
+            ->filter() // Remove any null/empty values
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+            
+            \Log::info('Blocked dates found:', $blockedDates);
+            
+            return Response::json([
+                'success' => true,
+                'dates' => $blockedDates
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error in getBlockedDates:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return Response::json([
+                'success' => false,
+                'message' => 'Failed to load blocked dates',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
     
     /**
@@ -115,7 +185,10 @@ class ReservationController extends Controller
             'package_template_id' => 'nullable|exists:package_templates,id',
             'event_date' => 'required|date|after:today',
             'event_time' => 'required',
+            'end_time' => 'required|after:event_time',
             'guest_count' => 'required|integer|min:1',
+            'bride_name' => 'nullable|string|max:255',
+            'groom_name' => 'nullable|string|max:255',
             'special_requests' => 'nullable|string',
             'custom_package' => 'nullable|array',
         ]);
@@ -141,9 +214,12 @@ class ReservationController extends Controller
             $reservation->package_template_id = $validated['package_template_id'] ?? null;
             $reservation->event_date = $validated['event_date'];
             $reservation->event_time = $validated['event_time'];
+            $reservation->end_time = $validated['end_time'];
             $reservation->guest_count = $validated['guest_count'];
+            $reservation->bride_name = $validated['bride_name'] ?? null;
+            $reservation->groom_name = $validated['groom_name'] ?? null;
             $reservation->special_requests = $validated['special_requests'] ?? null;
-            $reservation->status = 'pending';
+            $reservation->status = 'pending_admin_review';
             
             // Calculate total price based on package or custom items
             if ($reservation->package_template_id) {

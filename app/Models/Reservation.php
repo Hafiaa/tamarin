@@ -104,6 +104,7 @@ class Reservation extends Model implements HasMedia
         'package_template_id',
         'event_date',
         'event_time',
+        'end_time',
         'guest_count',
         'special_requests',
         'bride_name',
@@ -138,6 +139,7 @@ class Reservation extends Model implements HasMedia
     protected $casts = [
         'event_date' => 'date',
         'event_time' => 'datetime',
+        'end_time' => 'datetime',
         'cancelled_at' => 'datetime',
         'total_price' => 'decimal:2',
         'estimated_revenue' => 'decimal:2',
