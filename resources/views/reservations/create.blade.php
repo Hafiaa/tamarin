@@ -88,21 +88,13 @@
 
                         <div class="form-group mb-3">
                             <label for="event_date">Tanggal Acara *</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control @error('event_date') is-invalid @enderror" 
-                                       id="event_date" name="event_date" 
-                                       value="{{ old('event_date') }}"
-                                       required
-                                       x-ref="eventDate"
-                                       placeholder="Pilih tanggal..."
-                                       readonly>
-                                <button class="btn btn-outline-secondary" type="button" id="checkDateBtn" @click="checkDateAvailability()">
-                                    <span x-show="!loading">Cek Ketersediaan</span>
-                                    <span class="spinner-border spinner-border-sm" x-show="loading" role="status" aria-hidden="true"></span>
-                                </button>
-                                <div class="invalid-feedback" id="dateFeedback"></div>
-                            </div>
-                            <small class="text-muted" id="dateAvailability"></small>
+                            <input type="date" class="form-control @error('event_date') is-invalid @enderror" 
+                                   id="event_date" name="event_date" 
+                                   value="{{ old('event_date') }}" 
+                                   min="{{ date('Y-m-d') }}" required>
+                            @error('event_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                             @error('event_date')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
@@ -172,93 +164,164 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- Removed flatpickr CSS as we're using native date input -->
 <style>
-    /* Style for blocked dates */
+    /* Calendar container */
+    .flatpickr-calendar {
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    
+    /* Calendar header */
+    .flatpickr-months {
+        border-radius: 8px 8px 0 0;
+        padding: 10px 0;
+        background: #4f46e5;
+    }
+    
+    .flatpickr-current-month {
+        font-size: 1.1em;
+        color: white;
+    }
+    
+    .flatpickr-months .flatpickr-month {
+        color: white;
+    }
+    
+    .flatpickr-months .flatpickr-prev-month,
+    .flatpickr-months .flatpickr-next-month {
+        color: white;
+        fill: white;
+        padding: 10px;
+    }
+    
+    .flatpickr-months .flatpickr-prev-month:hover,
+    .flatpickr-months .flatpickr-next-month:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Calendar days */
+    .flatpickr-day {
+        border-radius: 4px;
+        margin: 2px;
+        max-width: calc(100% / 7 - 4px);
+        height: 36px;
+        line-height: 36px;
+    }
+    
+    .flatpickr-day:hover {
+        background: #e9e7ff;
+        border-color: #c7d2fe;
+    }
+    
+    .flatpickr-day.selected, 
+    .flatpickr-day.selected:hover {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: white;
+    }
+    
+    .flatpickr-day.today {
+        border-color: #a5b4fc;
+        font-weight: bold;
+    }
+    
+    .flatpickr-day.today:hover {
+        background: #e0e7ff;
+    }
+    
+    .flatpickr-day.weekend {
+        color: #ef4444;
+    }
+    
+    /* Blocked dates */
     .flatpickr-day.blocked {
-        border-color: #dc3545 !important;
-        background: #fff0f0 !important;
-        color: #dc3545 !important;
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
         text-decoration: line-through;
+        cursor: not-allowed;
     }
     
     .flatpickr-day.blocked:hover {
-        background: #ffdddd !important;
+        background: #fee2e2 !important;
+    }
+    
+    /* Calendar footer */
+    .flatpickr-time {
+        border-top: 1px solid #e5e7eb;
+        padding: 10px 0;
+    }
+    
+    /* Input group */
+    .input-group-text {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .input-group-text:hover {
+        background-color: #e9ecef;
+    }
+    
+    /* Status messages */
+    .text-success {
+        color: #10b981 !important;
+    }
+    
+    .text-danger {
+        color: #ef4444 !important;
+    }
+    
+    .form-text {
+        display: block;
+        margin-top: 0.25rem;
     }
 </style>
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
+<!-- Removed flatpickr JS as we're using native date input -->
 <script>
     document.addEventListener('alpine:init', () => {
-        console.log('Alpine.js initialized');
-        
         Alpine.data('reservationForm', () => ({
             eventType: '',
             showWeddingFields: false,
             loading: false,
             dateAvailable: null,
-            dateMessage: '',
+            dateMessage: 'Pilih tanggal untuk memeriksa ketersediaan',
             blockedDates: [],
             flatpickrInstance: null,
+            minBookingDays: 3, // Minimum days in advance to book
             
             init() {
-                // Initialize with current values
                 this.toggleWeddingFields();
-                
-                // Initialize Flatpickr
                 this.initializeDatePicker();
-                
-                // Load blocked dates
                 this.loadBlockedDates();
             },
             
             initializeDatePicker() {
-                console.log('Initializing date picker...');
-                
-                // Make sure the element exists
-                if (!this.$refs.eventDate) {
-                    console.error('Date input element not found');
-                    return;
-                }
-                
-                // Initialize Flatpickr with basic options first
-                this.flatpickrInstance = flatpickr(this.$refs.eventDate, {
-                    locale: 'id',
-                    minDate: 'today',
-                    dateFormat: 'Y-m-d',
-                    disable: [],
-                    onChange: (selectedDates, dateStr) => {
-                        console.log('Date selected:', dateStr);
-                        if (dateStr) {
-                            this.checkDateAvailability();
-                        }
-                    },
-                    onDayCreate: (dObj, dStr, fp, dayElem) => {
-                        try {
-                            // Format the date from the calendar day element to YYYY-MM-DD
-                            const currentDateStr = fp.formatDate(dayElem.dateObj, "Y-m-d");
-                            
-                            if (this.blockedDates.includes(currentDateStr)) {
-                                dayElem.classList.add('blocked');
-                                dayElem.title = 'Tanggal tidak tersedia';
-                                // The class 'blocked' should handle styling via CSS.
-                                // Direct style manipulation can be removed if CSS is sufficient.
-                                // dayElem.style.textDecoration = 'line-through'; 
-                            }
-                        } catch (e) {
-                            console.error('Error in onDayCreate:', e);
-                        }
+                // Simple date initialization using native date input
+                const dateInput = document.getElementById('event_date');
+                if (dateInput) {
+                    // Set minimum date to today
+                    const today = new Date().toISOString().split('T')[0];
+                    dateInput.min = today;
+                    
+                    // Initialize with default date if empty
+                    if (!dateInput.value) {
+                        const defaultDate = new Date();
+                        defaultDate.setDate(defaultDate.getDate() + this.minBookingDays);
+                        dateInput.value = defaultDate.toISOString().split('T')[0];
                     }
-                });
-                
-                console.log('Date picker initialized');
+                    
+                    // Add change event listener
+                    dateInput.addEventListener('change', () => {
+                        this.checkDateAvailability();
+                    });
+                }
             },
             
             async loadBlockedDates() {
-                console.log('Loading blocked dates...');
                 try {
                     const response = await fetch('{{ route("blocked-dates.list") }}', {
                         headers: {
@@ -269,47 +332,44 @@
                         credentials: 'same-origin'
                     });
                     
-                    console.log('Blocked dates response status:', response.status);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     
                     const data = await response.json();
-                    console.log('Blocked dates data:', data);
                     
                     if (data.success && Array.isArray(data.dates)) {
                         this.blockedDates = data.dates;
-                        console.log('Blocked dates loaded:', this.blockedDates);
                         
-                        // Update Flatpickr with blocked dates
                         if (this.flatpickrInstance) {
                             this.flatpickrInstance.set('disable', this.blockedDates);
                             this.flatpickrInstance.redraw();
-                            console.log('Flatpickr updated with blocked dates');
                         }
-                    } else {
-                        console.error('Invalid blocked dates format:', data);
+                        
+                        // Check initial date if already selected
+                        if (this.$refs.eventDate.value) {
+                            this.checkDateAvailability();
+                        }
                     }
                 } catch (error) {
                     console.error('Error loading blocked dates:', error);
+                    this.dateMessage = 'Gagal memuat data tanggal yang tidak tersedia';
                 }
-            },
             },
             
             toggleWeddingFields() {
                 const selectedOption = this.$el.querySelector('#event_type_id option:checked');
                 if (selectedOption) {
                     const eventName = selectedOption.textContent.toLowerCase();
-                    this.showWeddingFields = eventName.includes('wedding') || eventName.includes('pernikahan') || 
-                                           eventName.includes('lamaran') || eventName.includes('engagement');
+                    this.showWeddingFields = eventName.includes('wedding') || 
+                                           eventName.includes('pernikahan') || 
+                                           eventName.includes('lamaran') || 
+                                           eventName.includes('engagement');
                 } else {
                     this.showWeddingFields = false;
                 }
             },
             
             async checkDateAvailability() {
-                const dateInput = this.$refs.eventDate;
+                const dateInput = document.getElementById('event_date');
                 const dateValue = dateInput.value;
                 
                 if (!dateValue) {
@@ -329,16 +389,16 @@
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'Accept': 'application/json',
                         },
-                        body: JSON.stringify({
-                            date: dateValue
-                        })
+                        body: JSON.stringify({ date: dateValue })
                     });
+                    
+                    if (!response.ok) throw new Error('Network response was not ok');
                     
                     const data = await response.json();
                     
                     if (data.available) {
                         this.dateAvailable = true;
-                        this.dateMessage = 'Tanggal tersedia! 🎉';
+                        this.dateMessage = 'Tanggal tersedia';
                         dateInput.classList.remove('is-invalid');
                         dateInput.classList.add('is-valid');
                     } else {
@@ -350,7 +410,7 @@
                 } catch (error) {
                     console.error('Error checking date availability:', error);
                     this.dateAvailable = false;
-                    this.dateMessage = 'Terjadi kesalahan saat memeriksa ketersediaan';
+                    this.dateMessage = 'Gagal memeriksa ketersediaan. Silakan coba lagi.';
                     dateInput.classList.add('is-invalid');
                 } finally {
                     this.loading = false;
@@ -358,9 +418,10 @@
             },
             
             validateForm(event) {
+                // Wedding fields validation
                 if (this.showWeddingFields) {
-                    const brideName = this.$el.querySelector('#bride_name').value.trim();
-                    const groomName = this.$el.querySelector('#groom_name').value.trim();
+                    const brideName = this.$el.querySelector('#bride_name')?.value.trim();
+                    const groomName = this.$el.querySelector('#groom_name')?.value.trim();
                     
                     if (!brideName || !groomName) {
                         event.preventDefault();
@@ -369,9 +430,16 @@
                     }
                 }
                 
-                if (this.dateAvailable === false) {
+                // Date validation
+                if (!this.$refs.eventDate.value) {
                     event.preventDefault();
-                    alert('Mohon pilih tanggal yang tersedia');
+                    alert('Mohon pilih tanggal acara');
+                    return false;
+                }
+                
+                if (this.dateAvailable !== true) {
+                    event.preventDefault();
+                    alert('Mohon pastikan tanggal yang dipilih tersedia');
                     return false;
                 }
                 
