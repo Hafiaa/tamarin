@@ -34,28 +34,28 @@ class DatabaseSeeder extends Seeder
             ]);
         }
         
-        // Seed blocked dates and testimonials
-        $this->call([
-            BlockedDatesAndTestimonialsSeeder::class,
-        ]);
-
         // Disable foreign key checks
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         
-        // Truncate tables first to avoid duplicates
+        // Truncate menu-related tables
         \App\Models\MenuItem::truncate();
         \App\Models\MenuCategory::truncate();
-        \App\Models\ServiceItem::truncate();
-        \App\Models\PackageTemplate::truncate();
-        \App\Models\EventType::truncate();
         
-        // Re-enable foreign key checks
-        \Illuminate\Support\Facades\DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-        // Seed menu categories and items
+        // Enable foreign key checks
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        
+        // Seed complete menu items and package templates
         $this->call([
-            UpdatedMenuItemsSeeder::class,
-            PackageTemplatesSeeder::class,
+            CompleteMenuItemsSeeder::class,
+            PackageTemplatesSeeder::class
         ]);
+        
+        // Skip other seeders as they're not needed or replaced
+        // $this->call([
+        //     NewMenuItemsSeeder::class,
+        //     AdditionalMenuItemsSeeder::class,
+        //     BlockedDatesAndTestimonialsSeeder::class,
+        //     UpdatedMenuItemsSeeder::class,
+        // ]);
     }
 }

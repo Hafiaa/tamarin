@@ -34,27 +34,21 @@ class BlockedDatesAndTestimonialsSeeder extends Seeder
                 'date' => now()->addDays(5)->format('Y-m-d'),
                 'reason' => $reasons[array_rand($reasons)],
                 'is_recurring_yearly' => false,
-                'blocked_by' => 1,
             ],
             [
                 'date' => now()->addDays(15)->format('Y-m-d'),
-                'blocked_until' => now()->addDays(17)->format('Y-m-d'),
                 'reason' => $reasons[array_rand($reasons)],
                 'is_recurring_yearly' => false,
-                'blocked_by' => 1,
             ],
             [
                 'date' => now()->addDays(30)->format('Y-m-d'),
                 'reason' => $reasons[array_rand($reasons)],
                 'is_recurring_yearly' => true,
-                'blocked_by' => 1,
             ],
             [
                 'date' => now()->addDays(45)->format('Y-m-d'),
-                'blocked_until' => now()->addDays(47)->format('Y-m-d'),
                 'reason' => $reasons[array_rand($reasons)],
                 'is_recurring_yearly' => false,
-                'blocked_by' => 1,
             ],
         ];
         
