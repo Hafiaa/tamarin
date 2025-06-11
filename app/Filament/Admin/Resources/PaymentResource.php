@@ -47,18 +47,13 @@ class PaymentResource extends Resource
                 Forms\Components\DatePicker::make('due_date')
                     ->required(),
                 Forms\Components\DatePicker::make('payment_date')
-                    ->visible(function (\Closure $get) {
-                        return in_array($get('status'), ['paid', 'confirmed', 'refunded']);
-                    }),
+                    ->visible(fn (\Filament\Forms\Get $get): bool => in_array($get('status'), ['paid', 'confirmed', 'refunded'])),
                 Forms\Components\Textarea::make('rejection_reason')
-                    ->visible(function (\Closure $get) {
-                        return $get('status') === 'declined';
-                    })
-                    ->required(function (\Closure $get) {
-                        return $get('status') === 'declined';
-                    })
+                    ->visible(fn (\Filament\Forms\Get $get): bool => $get('status') === 'declined')
+                    ->required(fn (\Filament\Forms\Get $get): bool => $get('status') === 'declined')
                     ->columnSpanFull(),
                 Forms\Components\Textarea::make('notes')
+                    ->label('Catatan')
                     ->columnSpanFull(),
             ]);
     }

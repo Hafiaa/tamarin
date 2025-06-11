@@ -80,14 +80,14 @@
                                             </td>
                                             <td>{{ $reservation->guest_count }}</td>
                                             <td>
-                                                @if($reservation->status == 'pending')
-                                                    <span class="badge bg-warning">Pending</span>
+                                                @if($reservation->status == 'pending' || $reservation->status == 'pending_admin_review')
+                                                    <span class="badge bg-warning">Menunggu Konfirmasi</span>
                                                 @elseif($reservation->status == 'confirmed')
-                                                    <span class="badge bg-success">Confirmed</span>
+                                                    <span class="badge bg-success">Dikonfirmasi</span>
                                                 @elseif($reservation->status == 'completed')
-                                                    <span class="badge bg-info">Completed</span>
+                                                    <span class="badge bg-info">Selesai</span>
                                                 @elseif($reservation->status == 'cancelled')
-                                                    <span class="badge bg-danger">Cancelled</span>
+                                                    <span class="badge bg-danger">Dibatalkan</span>
                                                 @endif
                                             </td>
                                             <td>
