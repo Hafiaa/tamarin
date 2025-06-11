@@ -1,6 +1,5 @@
 <?php
 
-use App\Filament\Pages\Settings;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -28,12 +27,7 @@ Route::domain(config('filament.domain'))
         DispatchServingFilamentEvent::class,
     ])
     ->group(function () {
-        // Explicitly define the settings route
-        Route::get('/admin/settings', Settings::class)
-            ->name('filament.admin.pages.settings')
-            ->middleware([Authenticate::class]);
-            
-        // Add other Filament routes here if needed
+        // Filament will automatically register routes for resources
     });
 
 // Ensure the admin panel is accessible

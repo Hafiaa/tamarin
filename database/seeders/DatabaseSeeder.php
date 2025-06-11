@@ -48,7 +48,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CompleteMenuItemsSeeder::class,
             PackageTemplatesSeeder::class,
-            AddPackageImagesSeeder::class
+            AddPackageImagesSeeder::class,
+            IndonesianHolidaysSeeder::class
         ]);
         
         // Skip other seeders as they're not needed or replaced
