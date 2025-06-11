@@ -20,13 +20,24 @@
             </div>
             <div class="col-md-4 text-md-end">
                 <span class="badge 
-                    @if($reservation->status == 'pending') bg-warning 
-                    @elseif($reservation->status == 'confirmed') bg-success 
-                    @elseif($reservation->status == 'completed') bg-info 
-                    @elseif($reservation->status == 'cancelled') bg-danger 
+                    @if($reservation->status === \App\Models\Reservation::STATUS_PENDING) bg-warning 
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_APPROVED) bg-success 
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_COMPLETED) bg-info 
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_CANCELLED) bg-danger 
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_DECLINED) bg-secondary 
                     @endif 
                     p-2 fs-6 mb-2">
-                    {{ ucfirst($reservation->status) }}
+                    @if($reservation->status === \App\Models\Reservation::STATUS_PENDING)
+                        Menunggu Konfirmasi Admin
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_APPROVED)
+                        Dikonfirmasi
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_COMPLETED)
+                        Selesai
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_CANCELLED)
+                        Dibatalkan
+                    @elseif($reservation->status === \App\Models\Reservation::STATUS_DECLINED)
+                        Ditolak
+                    @endif
                 </span>
                 <div class="mt-2">
                     @php
@@ -34,15 +45,15 @@
                         $remainingAmount = $reservation->total_price - $paidAmount;
                     @endphp
                     
-                    @if($remainingAmount > 0 && $reservation->status != 'cancelled')
+                    @if($reservation->status === \App\Models\Reservation::STATUS_APPROVED && $remainingAmount > 0)
                         <a href="{{ route('customer.dashboard.payments.create', $reservation->id) }}" class="btn btn-success">
-                            <i class="fas fa-credit-card me-2"></i> Make Payment
+                            <i class="fas fa-credit-card me-2"></i> Bayar Sekarang
                         </a>
                     @endif
                     
-                    @if($reservation->status == 'completed' && !$reservation->testimonial)
-                        <a href="{{ route('customer.dashboard.testimonials.create', $reservation->id) }}" class="btn btn-outline-primary">
-                            <i class="fas fa-star me-2"></i> Leave Review
+                    @if($reservation->status === \App\Models\Reservation::STATUS_COMPLETED && !$reservation->testimonial)
+                        <a href="{{ route('customer.dashboard.testimonials.create', $reservation->id) }}" class="btn btn-outline-primary mt-2">
+                            <i class="fas fa-star me-2"></i> Beri Ulasan
                         </a>
                     @endif
                 </div>

@@ -80,14 +80,16 @@
                                             </td>
                                             <td>{{ $reservation->guest_count }}</td>
                                             <td>
-                                                @if($reservation->status == 'pending' || $reservation->status == 'pending_admin_review')
+                                                @if($reservation->status === \App\Models\Reservation::STATUS_PENDING)
                                                     <span class="badge bg-warning">Menunggu Konfirmasi</span>
-                                                @elseif($reservation->status == 'confirmed')
+                                                @elseif($reservation->status === \App\Models\Reservation::STATUS_APPROVED)
                                                     <span class="badge bg-success">Dikonfirmasi</span>
-                                                @elseif($reservation->status == 'completed')
+                                                @elseif($reservation->status === \App\Models\Reservation::STATUS_COMPLETED)
                                                     <span class="badge bg-info">Selesai</span>
-                                                @elseif($reservation->status == 'cancelled')
+                                                @elseif($reservation->status === \App\Models\Reservation::STATUS_CANCELLED)
                                                     <span class="badge bg-danger">Dibatalkan</span>
+                                                @elseif($reservation->status === \App\Models\Reservation::STATUS_DECLINED)
+                                                    <span class="badge bg-secondary">Ditolak</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -107,20 +109,13 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <div class="btn-group">
-                                                    <a href="{{ route('customer.dashboard.reservations.show', $reservation->id) }}" class="btn btn-sm btn-outline-primary">View</a>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <span class="visually-hidden">Toggle Dropdown</span>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        @if($paidAmount < $reservation->total_price && $reservation->status != 'cancelled')
-                                                            <li><a class="dropdown-item" href="{{ route('customer.dashboard.payments.create', $reservation->id) }}">Make Payment</a></li>
-                                                        @endif
-                                                        @if($reservation->status == 'completed')
-                                                            <li><a class="dropdown-item" href="{{ route('customer.dashboard.testimonials.create', $reservation->id) }}">Leave Review</a></li>
-                                                        @endif
-                                                    </ul>
-                                                </div>
+                                                <a href="{{ route('customer.dashboard.reservations.show', $reservation->id) }}" class="btn btn-sm btn-outline-primary me-1">Detail</a>
+                                                @if($reservation->status === \App\Models\Reservation::STATUS_APPROVED && $paidAmount < $reservation->total_price)
+                                                    <a href="{{ route('customer.dashboard.payments.create', $reservation->id) }}" class="btn btn-sm btn-success">Bayar</a>
+                                                @endif
+                                                @if($reservation->status === \App\Models\Reservation::STATUS_COMPLETED)
+                                                    <a href="{{ route('customer.dashboard.testimonials.create', $reservation->id) }}" class="btn btn-sm btn-outline-secondary mt-1 d-block">Beri Ulasan</a>
+                                                @endif
                                             </td>
                                         </tr>
                                     @endforeach

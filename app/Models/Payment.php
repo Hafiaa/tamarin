@@ -41,7 +41,7 @@ class Payment extends Model implements HasMedia
      */
     protected $fillable = [
         'reservation_id',
-        'type',
+        'payment_type',
         'amount',
         'status',
         'due_date',

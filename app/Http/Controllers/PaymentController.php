@@ -17,6 +17,31 @@ use Illuminate\Support\Str;
 class PaymentController extends Controller
 {
     /**
+     * Display the specified payment.
+     *
+     * @param  \App\Models\Payment  $payment
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function show(Payment $payment)
+    {
+        try {
+            $user = Auth::user();
+            
+            // Check if payment exists and belongs to the authenticated user
+            if ($payment->reservation->user_id !== $user->id) {
+                return redirect()->route('customer.dashboard.payments')
+                    ->with('error', 'You are not authorized to view this payment.');
+            }
+            
+            return view('customer.payments.show', compact('payment'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error showing payment: ' . $e->getMessage());
+            return redirect()->route('customer.dashboard.payments')
+                ->with('error', 'An error occurred while retrieving the payment details.');
+        }
+    }
+    /**
      * Constructor to apply middleware
      */
     public function __construct()
@@ -85,14 +110,20 @@ class PaymentController extends Controller
      */
     public function store(Request $request, $reservationId)
     {
+        \Log::info('Starting payment process', ['reservation_id' => $reservationId, 'user_id' => Auth::id()]);
+        
         try {
-            \Log::info('Starting payment process', ['reservation_id' => $reservationId, 'user_id' => Auth::id()]);
-            
             $user = Auth::user();
+            \Log::debug('User authenticated', ['user_id' => $user->id, 'email' => $user->email]);
             
+            // Log all request data except files
+            $loggableRequest = $request->except(['payment_proof']);
+            \Log::debug('Payment request data', $loggableRequest);
+            
+            // Validate the request
             $validated = $request->validate([
                 'amount' => 'required|numeric|min:1',
-                'payment_method' => 'required|string|in:bank_transfer,credit_card,cash',
+                'payment_method' => 'required|string|in:bank_transfer,credit_card,debit_card,e_wallet,qris,cash',
                 'payment_date' => 'required|date',
                 'payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:5120',
                 'notes' => 'nullable|string|max:500',
@@ -100,10 +131,27 @@ class PaymentController extends Controller
             
             \Log::debug('Validation passed', $validated);
             
+            // Find the reservation with detailed logging
             $reservation = Reservation::where('user_id', $user->id)
                 ->where('id', $reservationId)
                 ->whereIn('status', ['awaiting_payment', 'pending', 'confirmed'])
-                ->firstOrFail();
+                ->first();
+                
+            if (!$reservation) {
+                $status = Reservation::find($reservationId)->status ?? 'not_found';
+                \Log::warning('Reservation not found or invalid status', [
+                    'reservation_id' => $reservationId,
+                    'user_id' => $user->id,
+                    'status' => $status
+                ]);
+                return back()->with('error', 'Reservasi tidak ditemukan atau status tidak valid.');
+            }
+            
+            \Log::debug('Reservation found', [
+                'reservation_id' => $reservation->id,
+                'status' => $reservation->status,
+                'total_price' => $reservation->total_price
+            ]);
                 
             // Calculate remaining amount
             $paidAmount = $reservation->payments()
@@ -111,6 +159,11 @@ class PaymentController extends Controller
                 ->sum('amount');
                 
             $remainingAmount = $reservation->total_price - $paidAmount;
+            \Log::debug('Payment calculation', [
+                'paid_amount' => $paidAmount,
+                'remaining_amount' => $remainingAmount,
+                'payment_amount' => $validated['amount']
+            ]);
             
             if ($remainingAmount <= 0) {
                 \Log::info('Reservation already paid', ['reservation_id' => $reservation->id]);
@@ -128,44 +181,82 @@ class PaymentController extends Controller
             }
             
             DB::beginTransaction();
+            \Log::debug('Starting database transaction');
             
             try {
-                \Log::debug('Creating payment record');
-                $payment = new Payment();
-                $payment->reservation_id = $reservation->id;
-                $payment->type = 'down_payment'; // Set default payment type
-                $payment->amount = $validated['amount'];
-                $payment->payment_method = $validated['payment_method'];
-                $payment->payment_date = $validated['payment_date'];
-                $payment->due_date = now()->addDays(1); // Set due date to tomorrow
-                $payment->status = 'payment_pending_verification';
-                $payment->notes = $validated['notes'] ?? null;
+                // Prepare payment data
+                $paymentData = [
+                    'reservation_id' => $reservation->id,
+                    'payment_type' => 'down_payment',
+                    'amount' => $validated['amount'],
+                    'payment_method' => $validated['payment_method'],
+                    'payment_date' => $validated['payment_date'],
+                    'due_date' => now()->addDay(),
+                    'status' => 'payment_pending_verification',
+                    'notes' => $validated['notes'] ?? null,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
+                
+                \Log::debug('Creating payment record', $paymentData);
+                
+                // Create payment record
+                $payment = new Payment($paymentData);
                 
                 if (!$payment->save()) {
-                    throw new \Exception('Failed to save payment record');
+                    $error = 'Failed to save payment record';
+                    \Log::error($error, ['errors' => $payment->getErrors()]);
+                    throw new \Exception($error);
                 }
                 
-                \Log::info('Payment record created', ['payment_id' => $payment->id]);
+                \Log::info('Payment record created', [
+                    'payment_id' => $payment->id,
+                    'reservation_id' => $payment->reservation_id,
+                    'amount' => $payment->amount
+                ]);
                 
                 // Handle file upload
                 if ($request->hasFile('payment_proof')) {
-                    \Log::debug('Processing payment proof upload');
+                    $file = $request->file('payment_proof');
+                    \Log::debug('Processing payment proof upload', [
+                        'original_name' => $file->getClientOriginalName(),
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                        'extension' => $file->getClientOriginalExtension()
+                    ]);
+                    
                     try {
+                        // Check storage directory permissions
+                        $storagePath = storage_path('app/public/payment_proofs');
+                        if (!is_dir($storagePath)) {
+                            \Log::info('Creating payment proof directory', ['path' => $storagePath]);
+                            mkdir($storagePath, 0755, true);
+                        }
+                        
+                        // Check if directory is writable
+                        if (!is_writable($storagePath)) {
+                            throw new \Exception('Direktori penyimpanan tidak dapat ditulisi. Silakan hubungi administrator.');
+                        }
+                        
+                        // Upload file
                         $media = $payment->addMediaFromRequest('payment_proof')
                             ->usingName(Str::slug('payment-proof-' . $reservation->code . '-' . now()->format('YmdHis')))
                             ->toMediaCollection('payment_proof');
                             
                         if (!$media) {
-                            throw new \Exception('Failed to upload payment proof');
+                            throw new \Exception('Gagal mengunggah bukti pembayaran');
                         }
-                        \Log::info('Payment proof uploaded', ['media_id' => $media->id]);
                         
+                        \Log::info('Payment proof uploaded successfully', [
+                            'media_id' => $media->id,
+                            'file_name' => $media->file_name,
+                            'disk' => $media->disk,
+                            'path' => $media->getPath()
+                        ]);
                     } catch (\Exception $e) {
-                        \Log::error('Error uploading payment proof: ' . $e->getMessage());
-                        throw new \Exception('Gagal mengunggah bukti pembayaran. ' . $e->getMessage());
+                        throw $e;
                     }
                 } else {
-                    \Log::warning('No payment proof file found in request');
                     throw new \Exception('Bukti pembayaran tidak ditemukan');
                 }
                 
@@ -173,10 +264,9 @@ class PaymentController extends Controller
                 try {
                     $admins = \App\Models\User::role('admin')->get();
                     if ($admins->isNotEmpty()) {
+                        \Log::debug('Sending notifications to admins', ['admin_count' => $admins->count()]);
                         Notification::send($admins, new PaymentProofUploaded($payment));
-                        \Log::info('Admin notifications sent', ['admin_count' => $admins->count()]);
-                    } else {
-                        \Log::warning('No admin users found to notify');
+                        \Log::info('Admin notifications sent successfully');
                     }
                 } catch (\Exception $e) {
                     // Don't fail the payment if notification fails
@@ -187,9 +277,9 @@ class PaymentController extends Controller
                 if ($reservation->status === 'awaiting_payment') {
                     $reservation->status = 'pending';
                     if (!$reservation->save()) {
-                        throw new \Exception('Failed to update reservation status');
+                        throw new \Exception('Gagal memperbarui status reservasi');
                     }
-                    \Log::info('Reservation status updated', ['reservation_id' => $reservation->id, 'new_status' => 'pending']);
+                    \Log::info('Reservation status updated to pending', ['reservation_id' => $reservation->id]);
                 }
                 
                 DB::commit();
@@ -200,26 +290,24 @@ class PaymentController extends Controller
                     
             } catch (\Exception $e) {
                 DB::rollBack();
-                \Log::error('Error in payment transaction: ' . $e->getMessage());
+                \Log::error('Payment processing error: ' . $e->getMessage());
                 \Log::error($e->getTraceAsString());
-                throw $e; // Re-throw to be caught by the outer catch
+                
+                return back()
+                    ->with('error', 'Terjadi kesalahan saat memproses pembayaran: ' . $e->getMessage())
+                    ->withInput($request->except('payment_proof', 'password'));
             }
                 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::warning('Validation error in payment', ['errors' => $e->errors()]);
             throw $e; // Let Laravel handle validation exceptions
-            
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            \Log::warning('Reservation not found or not accessible', ['reservation_id' => $reservationId, 'user_id' => Auth::id()]);
-            return back()->with('error', 'Reservasi tidak ditemukan atau tidak dapat diakses.');
             
         } catch (\Exception $e) {
             \Log::error('Unexpected error in payment process: ' . $e->getMessage());
             \Log::error($e->getTraceAsString());
             
             return back()
-                ->with('error', 'Terjadi kesalahan saat memproses pembayaran. Silakan coba lagi atau hubungi tim dukungan.')
-                ->withInput();
+                ->with('error', 'Terjadi kesalahan yang tidak terduga. Silakan coba lagi atau hubungi tim dukungan.')
+                ->withInput($request->except('payment_proof', 'password'));
         }
     }
     

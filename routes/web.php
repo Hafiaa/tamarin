@@ -80,6 +80,7 @@ Route::middleware(['auth'])->prefix('dashboard')->name('customer.dashboard.')->g
     Route::get('/payments', [CustomerDashboardController::class, 'payments'])->name('payments');
     Route::get('/payments/create/{id}', [PaymentController::class, 'create'])->name('payments.create');
     Route::post('/payments/{id}', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
     
     // Testimonials Management
     Route::get('/testimonials', [CustomerDashboardController::class, 'testimonials'])->name('testimonials');
