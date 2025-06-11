@@ -32,10 +32,22 @@ class EventType extends Model
     
     /**
      * Get the package templates for the event type.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function packageTemplates()
     {
         return $this->hasMany(PackageTemplate::class);
+    }
+    
+    /**
+     * Alias for packageTemplates for backward compatibility.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function packages()
+    {
+        return $this->packageTemplates();
     }
     
     /**

@@ -76,11 +76,18 @@
                 @forelse($packages as $package)
                     <div class="col-xl-4 col-md-6 mb-4">
                         <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
-                            <div class="position-relative">
-                                <img src="{{ $package->getFirstMediaUrl('cover_image') ?: asset('images/placeholder.jpg') }}" 
-                                     class="card-img-top" 
-                                     alt="{{ $package->name }}"
-                                     style="height: 200px; object-fit: cover;">
+                            <div class="position-relative" style="height: 200px; background-color: #f8f9fa; overflow: hidden;">
+                                @if($package->getFirstMediaUrl('cover_image'))
+                                    <img src="{{ $package->getFirstMediaUrl('cover_image') }}" 
+                                         class="card-img-top h-100 w-100" 
+                                         alt="{{ $package->name }}"
+                                         style="object-fit: cover;">
+                                @else
+                                    <div class="d-flex align-items-center justify-content-center h-100 w-100 bg-light">
+                                        <i class="fas fa-image fa-4x text-muted"></i>
+                                    </div>
+                                @endif
+                                
                                 @if($package->is_featured)
                                     <span class="position-absolute top-0 start-0 bg-warning text-dark px-2 py-1 m-2 rounded">
                                         <i class="fas fa-star me-1"></i> Unggulan

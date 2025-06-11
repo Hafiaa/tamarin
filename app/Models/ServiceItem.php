@@ -20,13 +20,9 @@ class ServiceItem extends Model implements HasMedia
     protected $fillable = [
         'name',
         'description',
-        'base_price',
-        'type',
-        'is_active',
-        'image',
-        'options',
-        'min_quantity',
-        'max_quantity',
+        'price',
+        'category',
+        'is_available',
     ];
     
     /**
@@ -35,12 +31,41 @@ class ServiceItem extends Model implements HasMedia
      * @var array<string, string>
      */
     protected $casts = [
-        'base_price' => 'decimal:2',
-        'is_active' => 'boolean',
-        'options' => 'array',
-        'min_quantity' => 'integer',
-        'max_quantity' => 'integer',
+        'price' => 'decimal:2',
+        'is_available' => 'boolean',
     ];
+    
+    /**
+     * Get the base price attribute (for backward compatibility)
+     */
+    public function getBasePriceAttribute()
+    {
+        return $this->attributes['price'];
+    }
+    
+    /**
+     * Set the base price attribute (for backward compatibility)
+     */
+    public function setBasePriceAttribute($value)
+    {
+        $this->attributes['price'] = $value;
+    }
+    
+    /**
+     * Get the type attribute (for backward compatibility)
+     */
+    public function getTypeAttribute()
+    {
+        return $this->attributes['category'];
+    }
+    
+    /**
+     * Set the type attribute (for backward compatibility)
+     */
+    public function setTypeAttribute($value)
+    {
+        $this->attributes['category'] = $value;
+    }
     
     /**
      * The "booting" method of the model.
@@ -48,11 +73,12 @@ class ServiceItem extends Model implements HasMedia
     protected static function booted()
     {
         static::creating(function ($serviceItem) {
-            if (empty($serviceItem->type)) {
-                $serviceItem->type = 'service';
+            if (empty($serviceItem->category)) {
+                $serviceItem->category = 'service';
             }
-            if (empty($serviceItem->min_quantity)) {
-                $serviceItem->min_quantity = 1;
+            // Set default availability if not set
+            if (!isset($serviceItem->is_available)) {
+                $serviceItem->is_available = true;
             }
         });
     }

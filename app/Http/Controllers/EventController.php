@@ -17,17 +17,31 @@ class EventController extends Controller
     public function index(Request $request)
     {
         $eventTypeId = $request->query('event_type');
+        $selectedEventType = null;
         
-        $query = PackageTemplate::where('is_active', true);
+        $query = PackageTemplate::where('is_active', true)
+            ->with(['eventType', 'media']);
         
         if ($eventTypeId) {
-            $query->where('event_type_id', $eventTypeId);
+            $selectedEventType = EventType::find($eventTypeId);
+            if ($selectedEventType) {
+                $query->where('event_type_id', $eventTypeId);
+            }
         }
         
-        $packages = $query->with('eventType')->paginate(9);
-        $eventTypes = EventType::where('is_active', true)->get();
+        $packages = $query->paginate(9);
+        $eventTypes = EventType::where('is_active', true)
+            ->withCount(['packages' => function($q) {
+                $q->where('is_active', true);
+            }])
+            ->get();
         
-        return view('events.index', compact('packages', 'eventTypes', 'eventTypeId'));
+        return view('events.index', [
+            'packages' => $packages,
+            'eventTypes' => $eventTypes,
+            'eventTypeId' => $eventTypeId,
+            'selectedEventType' => $selectedEventType
+        ]);
     }
     
     /**

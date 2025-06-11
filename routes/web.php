@@ -61,7 +61,7 @@ Route::prefix('custom-package')->name('custom-package.')->group(function () {
     
     // Step 3: Review & Submit
     Route::get('/step3', [CustomPackageController::class, 'step3'])->name('step3');
-    Route::post('/', [CustomPackageController::class, 'store'])->name('store');
+    Route::post('/store', [CustomPackageController::class, 'store'])->name('store');
     
     // Thank You Page
     Route::get('/thank-you/{reservation}', [CustomPackageController::class, 'thankYou'])->name('thank-you');
@@ -78,8 +78,8 @@ Route::middleware(['auth'])->prefix('dashboard')->name('customer.dashboard.')->g
     
     // Payments Management
     Route::get('/payments', [CustomerDashboardController::class, 'payments'])->name('payments');
-    Route::get('/payments/create/{reservationId}', [PaymentController::class, 'create'])->name('payments.create');
-    Route::post('/payments/{reservationId}', [PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/create/{id}', [PaymentController::class, 'create'])->name('payments.create');
+    Route::post('/payments/{id}', [PaymentController::class, 'store'])->name('payments.store');
     
     // Testimonials Management
     Route::get('/testimonials', [CustomerDashboardController::class, 'testimonials'])->name('testimonials');

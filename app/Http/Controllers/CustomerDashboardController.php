@@ -75,12 +75,17 @@ class CustomerDashboardController extends Controller
                 'eventType', 
                 'payments', 
                 'revisions.user',
-                'customPackageItems.serviceItem'
+                'customPackageItems.serviceItem',
+                'packageTemplate.serviceItems' => function($query) {
+                    $query->withPivot('quantity');
+                }
             ])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
             
-        return view('customer.reservations.show', compact('reservation'));
+        $revisions = $reservation->revisions()->with('user')->latest()->get();
+            
+        return view('customer.reservation-detail', compact('reservation', 'revisions'));
     }
     
     /**

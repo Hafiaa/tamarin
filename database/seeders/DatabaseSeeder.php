@@ -47,7 +47,8 @@ class DatabaseSeeder extends Seeder
         // Seed complete menu items and package templates
         $this->call([
             CompleteMenuItemsSeeder::class,
-            PackageTemplatesSeeder::class
+            PackageTemplatesSeeder::class,
+            AddPackageImagesSeeder::class
         ]);
         
         // Skip other seeders as they're not needed or replaced

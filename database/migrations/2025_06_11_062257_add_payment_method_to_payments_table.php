@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('reservations', function (Blueprint $table) {
-            $table->time('end_time')->nullable()->after('event_time');
+        Schema::table('payments', function (Blueprint $table) {
+            $table->string('payment_method')->after('payment_type')->nullable();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('reservations', function (Blueprint $table) {
-            $table->dropColumn('end_time');
+        Schema::table('payments', function (Blueprint $table) {
+            $table->dropColumn('payment_method');
         });
     }
 };

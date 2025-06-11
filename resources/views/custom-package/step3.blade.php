@@ -45,7 +45,7 @@
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Review & Submit</h2>
     
     <form action="{{ route('custom-package.store') }}" method="POST" enctype="multipart/form-data" id="reviewForm">
-        @csrf
+    @csrf
         
         <!-- Hidden fields from previous steps -->
         <input type="hidden" name="event_type_id" value="{{ old('event_type_id') }}">

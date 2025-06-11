@@ -19,7 +19,7 @@
                         <p class="mb-0"><strong>Remaining Balance:</strong> <span class="text-primary font-weight-bold">Rp {{ number_format($remainingAmount, 0, ',', '.') }}</span></p>
                     </div>
 
-                    <form action="{{ route('customer.dashboard.payments.store', $reservation->id) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('customer.dashboard.payments.store', ['id' => $reservation->id]) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
                         <div class="mb-3">
@@ -41,11 +41,9 @@
                             <label for="payment_method" class="form-label">Payment Method</label>
                             <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
                                 <option value="" disabled {{ old('payment_method') ? '' : 'selected' }}>Select payment method</option>
-                                <option value="bca" {{ old('payment_method') == 'bca' ? 'selected' : '' }}>BCA Transfer</option>
-                                <option value="bni" {{ old('payment_method') == 'bni' ? 'selected' : '' }}>BNI Transfer</option>
-                                <option value="bri" {{ old('payment_method') == 'bri' ? 'selected' : '' }}>BRI Transfer</option>
-                                <option value="mandiri" {{ old('payment_method') == 'mandiri' ? 'selected' : '' }}>Mandiri Transfer</option>
-                                <option value="other" {{ old('payment_method') == 'other' ? 'selected' : '' }}>Other Bank Transfer</option>
+                                <option value="bank_transfer" {{ old('payment_method') == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                <option value="credit_card" {{ old('payment_method') == 'credit_card' ? 'selected' : '' }}>Credit Card</option>
+                                <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
                             </select>
                             @error('payment_method')
                                 <div class="invalid-feedback">{{ $message }}</div>
