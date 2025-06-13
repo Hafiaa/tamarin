@@ -116,8 +116,14 @@ class PaymentResource extends Resource
                         $media = $record->getFirstMedia('payment_proof');
                         return $media ? $media->getUrl() : null;
                     })
-                    ->extraImgAttributes(function() { return ['class' => 'h-12 w-auto rounded']; })
-                    ->openUrlInNewTab(),
+                    ->extraImgAttributes(function() { 
+                        return ['class' => 'h-12 w-auto rounded cursor-pointer hover:opacity-75 transition-opacity'];
+                    })
+                    ->url(function (Payment $record) {
+                        return $record->getFirstMediaUrl('payment_proof');
+                    })
+                    ->openUrlInNewTab()
+                    ->tooltip('Klik untuk melihat lebih besar'),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->formatStateUsing(function (string $state): string {
@@ -194,31 +200,75 @@ class PaymentResource extends Resource
             ])
             ->actions([
                 Tables\Actions\Action::make('view_proof')
-                    ->label('Lihat Bukti')
+                    ->label('Lihat Bukti Detail')
                     ->icon('heroicon-o-photo')
+                    ->modalHeading(function (Payment $record) {
+                        return 'Bukti Pembayaran - ' . ($record->reservation ? $record->reservation->code : '');
+                    })
                     ->modalContent(function (Payment $record) {
                         $media = $record->getFirstMedia('payment_proof');
+                        
                         if (!$media) {
-                            return 'Bukti pembayaran tidak tersedia';
+                            return view('filament.components.no-payment-proof');
                         }
                         
-                        $url = $media->getUrl();
                         $mimeType = $media->mime_type;
+                        $isImage = strpos($mimeType, 'image/') === 0;
+                        $isPdf = $mimeType === 'application/pdf';
                         
-                        if (strpos($mimeType, 'image/') === 0) {
-                            return "<img src='{$url}' class='w-full rounded' alt='Bukti Pembayaran'>";
-                        } elseif ($mimeType === 'application/pdf') {
-                            return "<embed src='{$url}' type='application/pdf' width='100%' height='600px'>";
+                        // Dapatkan path relatif file
+                        $relativePath = 'payment_proofs/' . $media->file_name;
+                        
+                        // Buat URL lengkap
+                        $url = asset('storage/' . $relativePath);
+                        
+                        // Tambahkan timestamp untuk menghindari cache
+                        $url .= '?t=' . now()->timestamp;
+                        
+                        // Log informasi untuk debugging
+                        \Log::info('Payment proof media info:', [
+                            'id' => $media->id,
+                            'file_name' => $media->file_name,
+                            'mime_type' => $mimeType,
+                            'size' => $media->size,
+                            'disk' => $media->disk,
+                            'url' => $url,
+                            'relative_path' => $relativePath,
+                            'storage_path' => storage_path('app/public/' . $relativePath),
+                            'public_path' => public_path('storage/' . $relativePath),
+                            'file_exists' => file_exists(storage_path('app/public/' . $relativePath))
+                        ]);
+                        
+                        // Jika file tidak ada di lokasi yang diharapkan, coba pindahkan
+                        if (!file_exists(storage_path('app/public/' . $relativePath))) {
+                            $oldPath = storage_path('app/public/' . $media->getPathRelativeToRoot());
+                            if (file_exists($oldPath)) {
+                                // Pastikan direktori tujuan ada
+                                if (!file_exists(dirname(storage_path('app/public/' . $relativePath)))) {
+                                    mkdir(dirname(storage_path('app/public/' . $relativePath)), 0777, true);
+                                }
+                                rename($oldPath, storage_path('app/public/' . $relativePath));
+                            }
                         }
                         
-                        return 'Format file tidak didukung: ' . $mimeType;
+                        return view('filament.components.payment-proof-modal', [
+                            'url' => $url,
+                            'mimeType' => $mimeType,
+                            'isImage' => $isImage,
+                            'isPdf' => $isPdf,
+                            'filename' => $media->file_name,
+                            'fileSize' => static::formatFileSize($media->size),
+                            'uploadedAt' => $media->created_at->format('d M Y H:i'),
+                        ]);
                     })
-                    ->modalSubmitAction(false)
+                    ->modalSubmitActionLabel(false)
                     ->modalCancelActionLabel('Tutup')
-                    ->visible(function (Payment $record) { 
-                        return $record->getFirstMedia('payment_proof') !== null; 
+                    ->visible(function ($record) {
+                        if (!$record) return false;
+                        return $record->getFirstMedia('payment_proof') !== null;
                     })
-                    ->modalWidth('4xl'),
+                    ->modalWidth('4xl')
+                    ->slideOver(),
                 Tables\Actions\Action::make('verify')
                     ->label('Verifikasi')
                     ->icon('heroicon-o-check-circle')
@@ -227,7 +277,7 @@ class PaymentResource extends Resource
                             ->label('Catatan')
                             ->required(),
                     ])
-                    ->action(function (array $data, Payment $record) {
+                    ->action(function ($data, $record) {
                         $record->update([
                             'status' => 'approved',
                             'admin_notes' => $data['notes'],
@@ -242,58 +292,67 @@ class PaymentResource extends Resource
                             $record->reservation->update(['status' => 'confirmed']);
                         }
                     })
-                    ->visible(function (Payment $record) { 
+                    ->visible(function ($record) { 
                         return $record->status === 'payment_pending_verification'; 
                     })
                     ->color('success'),
                 Tables\Actions\Action::make('reject')
                     ->label('Tolak')
                     ->icon('heroicon-o-x-circle')
-                    ->form([
-                        Forms\Components\Textarea::make('rejection_reason')
-                            ->label('Alasan Penolakan')
-                            ->required(),
-                    ])
-                    ->action(function (array $data, Payment $record) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'rejection_reason' => $data['rejection_reason'],
-                        ]);
+                    ->color('danger')
+                    ->action(function ($record, $data) {
+                        $record->status = 'rejected';
+                        $record->rejection_reason = $data['reason'];
+                        $record->save();
                         
-                        // Kirim notifikasi ke user
-                        $record->reservation->user->notify(new \App\Notifications\PaymentRejected($record));
+                        // Update status reservasi
+                        if ($record->reservation) {
+                            $record->reservation->status = 'payment_rejected';
+                            $record->reservation->save();
+                        }
+                        
+                        // Send notification
+                        Notification::make()
+                            ->title('Pembayaran Ditolak')
+                            ->danger()
+                            ->send();
                     })
-                    ->visible(function (Payment $record) { 
-                        return in_array($record->status, ['payment_pending_verification', 'pending']); 
-                    })
-                    ->color('danger'),
-                Tables\Actions\EditAction::make()
-                    ->visible(function (Payment $record) { 
-                        return auth()->user()->can('update', $record); 
-                    }),
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Alasan Penolakan')
+                            ->required()
+                    ])
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('markAsConfirmed')
-                        ->label('Tandai sebagai Dikonfirmasi')
-                        ->icon('heroicon-o-check')
-                        ->action(function (array $records) {
-                            $ids = array_map(function($record) {
-                                return $record['id'];
-                            }, $records);
+                Tables\Actions\BulkAction::make('confirm')
+                    ->label('Konfirmasi Pembayaran')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->action(function ($records) {
+                        foreach ($records as $record) {
+                            $record->status = 'confirmed';
+                            $record->save();
                             
-                            return Payment::whereIn('id', $ids)
-                                ->update(['status' => 'confirmed']);
-                        })
-                        ->deselectRecordsAfterCompletion()
-                        ->color('success')
-                        ->requiresConfirmation()
-                        ->modalHeading('Konfirmasi')
-                        ->modalDescription('Apakah Anda yakin ingin menandai pembayaran yang dipilih sebagai Dikonfirmasi?')
-                        ->modalSubmitActionLabel('Ya, konfirmasi')
-                        ->modalCancelActionLabel('Batal'),
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                            if ($record->reservation) {
+                                $record->reservation->status = 'confirmed';
+                                $record->reservation->save();
+                            }
+                        }
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pembayaran berhasil dikonfirmasi')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation()
+                    ->modalHeading('Konfirmasi Pembayaran')
+                    ->modalDescription('Apakah Anda yakin ingin mengonfirmasi pembayaran yang dipilih? Status akan diubah menjadi Dikonfirmasi.')
+                    ->modalSubmitActionLabel('Ya, Konfirmasi')
+                    ->deselectRecordsAfterCompletion()
+                    ->visible(function () {
+                        return auth()->user()->can('update', \App\Models\Payment::class);
+                    }),
+                Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
 
@@ -311,5 +370,19 @@ class PaymentResource extends Resource
             'create' => Pages\CreatePayment::route('/create'),
             'edit' => Pages\EditPayment::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Format file size to human readable format
+     */
+    private static function formatFileSize($bytes, $precision = 2)
+    {
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= (1 << (10 * $pow));
+
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }

@@ -234,6 +234,11 @@ class Payment extends Model implements HasMedia
     {
         $this->addMediaCollection('payment_proof')
             ->useDisk('public')
-            ->singleFile();
+            ->useFallbackUrl(asset('images/placeholder.jpg'))
+            ->useFallbackPath(public_path('images/placeholder.jpg'))
+            ->singleFile()
+            ->withResponsiveImages()
+            ->preserveOriginal()
+            ->directory('payment_proofs');
     }
 }
