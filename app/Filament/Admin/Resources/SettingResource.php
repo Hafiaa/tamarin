@@ -25,17 +25,50 @@ class SettingResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('group')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\KeyValue::make('payload')
-                    ->keyLabel('Setting Key')
-                    ->valueLabel('Setting Value')
-                    ->reorderable()
-                    ->columnSpanFull(),
+                Forms\Components\Section::make('Informasi Dasar')
+                    ->schema([
+                        Forms\Components\TextInput::make('group')
+                            ->label('Grup')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('contoh: general, payment, theme'),
+                            
+                        Forms\Components\TextInput::make('name')
+                            ->label('Nama Setting')
+                            ->required()
+                            ->maxLength(255)
+                            ->placeholder('contoh: site_title, primary_color'),
+                    ])
+                    ->columns(2),
+                    
+                Forms\Components\Section::make('Nilai Setting')
+                    ->schema([
+                        Forms\Components\Select::make('value_type')
+                            ->label('Tipe Nilai')
+                            ->options([
+                                'text' => 'Teks',
+                                'number' => 'Angka',
+                                'boolean' => 'Ya/Tidak',
+                                'select' => 'Pilihan Dropdown',
+                            ])
+                            ->default('text')
+                            ->live()
+                            ->afterStateUpdated(fn (callable $set) => $set('payload', [])),
+                            
+                        Forms\Components\Textarea::make('payload')
+                            ->label('Nilai')
+                            ->json()
+                            ->columnSpanFull()
+                            ->helperText('Untuk tipe "Pilihan Dropdown", gunakan format JSON: {"option1":"Label 1","option2":"Label 2"}'),
+                            
+                        Forms\Components\ViewField::make('preview')
+                            ->view('filament.forms.components.setting-preview')
+                            ->hidden(fn ($get) => $get('value_type') !== 'select'),
+                    ]),
+                    
+                Forms\Components\Toggle::make('is_recurring_yearly')
+                    ->label('Berulang Setiap Tahun')
+                    ->default(false),
             ]);
     }
 

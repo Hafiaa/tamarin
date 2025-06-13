@@ -38,15 +38,13 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="payment_method" class="form-label">Payment Method</label>
+                            <label for="payment_method" class="form-label">Metode Pembayaran</label>
                             <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
                                 <option value="" disabled {{ old('payment_method') ? '' : 'selected' }}>Pilih metode pembayaran</option>
-                                <option value="bank_transfer" {{ old('payment_method') == 'bank_transfer' ? 'selected' : '' }}>Transfer Bank</option>
-                                <option value="credit_card" {{ old('payment_method') == 'credit_card' ? 'selected' : '' }}>Kartu Kredit</option>
-                                <option value="debit_card" {{ old('payment_method') == 'debit_card' ? 'selected' : '' }}>Kartu Debit</option>
-                                <option value="e_wallet" {{ old('payment_method') == 'e_wallet' ? 'selected' : '' }}>E-Wallet (OVO, GoPay, Dll)</option>
-                                <option value="qris" {{ old('payment_method') == 'qris' ? 'selected' : '' }}>QRIS</option>
-                                <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Tunai</option>
+                                <option value="bca" {{ old('payment_method') == 'bca' ? 'selected' : '' }}>BCA</option>
+                                <option value="bni" {{ old('payment_method') == 'bni' ? 'selected' : '' }}>BNI</option>
+                                <option value="mandiri" {{ old('payment_method') == 'mandiri' ? 'selected' : '' }}>Mandiri</option>
+                                <option value="e_wallet" {{ old('payment_method') == 'e_wallet' ? 'selected' : '' }}>E-Wallet (Dana, OVO, GoPay, dll)</option>
                             </select>
                             @error('payment_method')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -110,18 +108,31 @@
                     <h5 class="mb-0">Payment Instructions</h5>
                 </div>
                 <div class="card-body">
-                    <h6>Bank Transfer Instructions:</h6>
-                    <ol class="mb-0">
-                        <li>Make a transfer to one of our bank accounts below:</li>
-                        <ul class="mt-2">
+                    <h6>Instruksi Pembayaran:</h6>
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Transfer Bank:</h6>
+                        <ul class="mb-3">
                             <li><strong>BCA</strong>: 123 456 7890 (TAMARIN CAFE)</li>
                             <li><strong>BNI</strong>: 987 654 3210 (TAMARIN CAFE)</li>
-                            <li><strong>BRI</strong>: 567 891 2345 (TAMARIN CAFE)</li>
+                            <li><strong>Mandiri</strong>: 567 891 2345 (TAMARIN CAFE)</li>
                         </ul>
-                        <li class="mt-2">Use your Reservation ID as the payment reference</li>
-                        <li>Upload the payment proof using the form above</li>
-                        <li>Your payment will be verified within 1x24 hours</li>
-                    </ol>
+                        
+                        <h6 class="fw-bold">E-Wallet:</h6>
+                        <ul class="mb-3">
+                            <li><strong>Dana</strong>: 0812 3456 7890 (TAMARIN CAFE)</li>
+                            <li><strong>OVO</strong>: 0812 3456 7890 (TAMARIN CAFE)</li>
+                            <li><strong>GoPay</strong>: 0812 3456 7890 (TAMARIN CAFE)</li>
+                        </ul>
+                        
+                        <div class="alert alert-info mb-0">
+                            <p class="mb-1"><strong>Catatan Penting:</strong></p>
+                            <ol class="mb-0">
+                                <li>Gunakan ID Reservasi sebagai referensi pembayaran</li>
+                                <li>Unggah bukti pembayaran menggunakan form di atas</li>
+                                <li>Pembayaran akan diverifikasi maksimal 1x24 jam</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

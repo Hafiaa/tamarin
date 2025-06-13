@@ -63,34 +63,78 @@ class PaymentResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('reservation.id')
-                    ->label('Reservation ID')
+                    ->label('ID Reservasi')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('payment_type')
+                Tables\Columns\TextColumn::make('reservation.code')
+                    ->label('Kode Booking')
                     ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('payment_type')
+                    ->label('Tipe Pembayaran')
+                    ->formatStateUsing(function (string $state): string {
+                        if ($state == 'dp1') return 'DP 1';
+                        if ($state == 'dp2') return 'DP 2';
+                        if ($state == 'down_payment') return 'Uang Muka';
+                        if ($state == 'full_payment') return 'Pelunasan';
+                        if ($state == 'revision') return 'Revisi';
+                        return ucfirst(str_replace('_', ' ', $state));
+                    })
                     ->badge()
                     ->color(function (string $state): string {
                         switch ($state) {
-                            case 'deposit':
+                            case 'dp1':
+                            case 'dp2':
+                            case 'down_payment':
                                 return 'info';
                             case 'full_payment':
-                                return 'primary';
-                            case 'installment':
+                                return 'success';
+                            case 'revision':
                                 return 'warning';
-                            case 'refund':
-                                return 'danger';
                             default:
                                 return 'secondary';
                         }
                     }),
                 Tables\Columns\TextColumn::make('amount')
+                    ->label('Jumlah')
                     ->money('IDR')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('payment_method')
+                    ->label('Metode')
+                    ->formatStateUsing(function (string $state): string {
+                        if ($state == 'bca') return 'BCA';
+                        if ($state == 'bni') return 'BNI';
+                        if ($state == 'mandiri') return 'Mandiri';
+                        if ($state == 'e_wallet') return 'E-Wallet';
+                        return ucfirst(str_replace('_', ' ', $state));
+                    })
+                    ->badge()
+                    ->color('info'),
+                Tables\Columns\ImageColumn::make('payment_proof')
+                    ->label('Bukti Bayar')
+                    ->getStateUsing(function (Payment $record) {
+                        $media = $record->getFirstMedia('payment_proof');
+                        return $media ? $media->getUrl() : null;
+                    })
+                    ->extraImgAttributes(function() { return ['class' => 'h-12 w-auto rounded']; })
+                    ->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->formatStateUsing(function (string $state): string {
+                        if ($state == 'pending') return 'Menunggu';
+                        if ($state == 'paid') return 'Dibayar';
+                        if ($state == 'confirmed') return 'Dikonfirmasi';
+                        if ($state == 'declined') return 'Ditolak';
+                        if ($state == 'cancelled') return 'Dibatalkan';
+                        if ($state == 'refunded') return 'Dikembalikan';
+                        if ($state == 'payment_pending_verification') return 'Menunggu Verifikasi';
+                        return ucfirst(str_replace('_', ' ', $state));
+                    })
                     ->badge()
                     ->color(function (string $state): string {
                         switch ($state) {
                             case 'pending':
+                            case 'payment_pending_verification':
                                 return 'warning';
                             case 'paid':
                                 return 'info';
@@ -107,21 +151,28 @@ class PaymentResource extends Resource
                     })
                     ->searchable(),
                 Tables\Columns\TextColumn::make('due_date')
-                    ->date()
+                    ->label('Jatuh Tempo')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->color(function (Payment $record) {
-                        return now() > $record->due_date && !in_array($record->status, ['paid', 'confirmed', 'refunded']) ? 'danger' : null;
+                        if (now() > $record->due_date && !in_array($record->status, ['paid', 'confirmed', 'refunded', 'approved'])) {
+                            return 'danger';
+                        }
+                        return null;
                     }),
                 Tables\Columns\TextColumn::make('payment_date')
-                    ->date()
+                    ->label('Tgl Bayar')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('Dibuat')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('Diperbarui')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(true),
             ])
@@ -142,17 +193,62 @@ class PaymentResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\Action::make('confirm')
-                    ->icon('heroicon-o-check')
-                    ->action(function (Payment $record) {
-                        return $record->update(['status' => 'confirmed']);
+                Tables\Actions\Action::make('view_proof')
+                    ->label('Lihat Bukti')
+                    ->icon('heroicon-o-photo')
+                    ->modalContent(function (Payment $record) {
+                        $media = $record->getFirstMedia('payment_proof');
+                        if (!$media) {
+                            return 'Bukti pembayaran tidak tersedia';
+                        }
+                        
+                        $url = $media->getUrl();
+                        $mimeType = $media->mime_type;
+                        
+                        if (strpos($mimeType, 'image/') === 0) {
+                            return "<img src='{$url}' class='w-full rounded' alt='Bukti Pembayaran'>";
+                        } elseif ($mimeType === 'application/pdf') {
+                            return "<embed src='{$url}' type='application/pdf' width='100%' height='600px'>";
+                        }
+                        
+                        return 'Format file tidak didukung: ' . $mimeType;
                     })
-                    ->visible(function (Payment $record) {
-                        return in_array($record->status, ['pending', 'paid']);
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup')
+                    ->visible(function (Payment $record) { 
+                        return $record->getFirstMedia('payment_proof') !== null; 
+                    })
+                    ->modalWidth('4xl'),
+                Tables\Actions\Action::make('verify')
+                    ->label('Verifikasi')
+                    ->icon('heroicon-o-check-circle')
+                    ->form([
+                        Forms\Components\Textarea::make('notes')
+                            ->label('Catatan')
+                            ->required(),
+                    ])
+                    ->action(function (array $data, Payment $record) {
+                        $record->update([
+                            'status' => 'approved',
+                            'admin_notes' => $data['notes'],
+                            'verified_at' => now(),
+                        ]);
+                        
+                        // Kirim notifikasi ke user
+                        $record->reservation->user->notify(new \App\Notifications\PaymentVerified($record));
+                        
+                        // Update status reservasi jika diperlukan
+                        if (in_array($record->reservation->status, ['awaiting_payment', 'pending'])) {
+                            $record->reservation->update(['status' => 'confirmed']);
+                        }
+                    })
+                    ->visible(function (Payment $record) { 
+                        return $record->status === 'payment_pending_verification'; 
                     })
                     ->color('success'),
-                Tables\Actions\Action::make('decline')
-                    ->icon('heroicon-o-x-mark')
+                Tables\Actions\Action::make('reject')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
                     ->form([
                         Forms\Components\Textarea::make('rejection_reason')
                             ->label('Alasan Penolakan')
@@ -160,38 +256,42 @@ class PaymentResource extends Resource
                     ])
                     ->action(function (array $data, Payment $record) {
                         $record->update([
-                            'status' => 'declined',
-                            'rejection_reason' => $data['rejection_reason']
+                            'status' => 'rejected',
+                            'rejection_reason' => $data['rejection_reason'],
                         ]);
+                        
+                        // Kirim notifikasi ke user
+                        $record->reservation->user->notify(new \App\Notifications\PaymentRejected($record));
                     })
-                    ->visible(function (Payment $record) {
-                        return in_array($record->status, ['pending', 'paid']);
+                    ->visible(function (Payment $record) { 
+                        return in_array($record->status, ['payment_pending_verification', 'pending']); 
                     })
                     ->color('danger'),
-                Tables\Actions\Action::make('markAsPaid')
-                    ->icon('heroicon-o-banknotes')
-                    ->action(function (Payment $record) {
-                        return $record->update([
-                            'status' => 'paid',
-                            'payment_date' => now()
-                        ]);
-                    })
-                    ->visible(function (Payment $record) {
-                        return $record->status === 'pending';
-                    })
-                    ->color('info'),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->visible(function (Payment $record) { 
+                        return auth()->user()->can('update', $record); 
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\BulkAction::make('markAsConfirmed')
+                        ->label('Tandai sebagai Dikonfirmasi')
                         ->icon('heroicon-o-check')
                         ->action(function (array $records) {
-                        return Payment::whereIn('id', collect($records)->pluck('id'))
-                            ->update(['status' => 'confirmed']);
-                    })
+                            $ids = array_map(function($record) {
+                                return $record['id'];
+                            }, $records);
+                            
+                            return Payment::whereIn('id', $ids)
+                                ->update(['status' => 'confirmed']);
+                        })
                         ->deselectRecordsAfterCompletion()
-                        ->color('success'),
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Konfirmasi')
+                        ->modalDescription('Apakah Anda yakin ingin menandai pembayaran yang dipilih sebagai Dikonfirmasi?')
+                        ->modalSubmitActionLabel('Ya, konfirmasi')
+                        ->modalCancelActionLabel('Batal'),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);

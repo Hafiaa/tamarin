@@ -123,7 +123,7 @@ class PaymentController extends Controller
             // Validate the request
             $validated = $request->validate([
                 'amount' => 'required|numeric|min:1',
-                'payment_method' => 'required|string|in:bank_transfer,credit_card,debit_card,e_wallet,qris,cash',
+                'payment_method' => 'required|string|in:bca,bni,mandiri,e_wallet',
                 'payment_date' => 'required|date',
                 'payment_proof' => 'required|file|mimes:jpeg,png,jpg,pdf|max:5120',
                 'notes' => 'nullable|string|max:500',

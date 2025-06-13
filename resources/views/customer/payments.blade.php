@@ -65,14 +65,16 @@
                                             </td>
                                             <td>{{ number_format($payment->amount, 0, ',', '.') }} IDR</td>
                                             <td>
-                                                @if($payment->payment_method == 'bank_transfer')
-                                                    <span><i class="fas fa-university me-1"></i> Bank Transfer</span>
-                                                @elseif($payment->payment_method == 'credit_card')
-                                                    <span><i class="fas fa-credit-card me-1"></i> Credit Card</span>
-                                                @elseif($payment->payment_method == 'cash')
-                                                    <span><i class="fas fa-money-bill-wave me-1"></i> Cash</span>
+                                                @if($payment->payment_method == 'bca')
+                                                    <span><i class="fas fa-university me-1"></i> BCA</span>
+                                                @elseif($payment->payment_method == 'bni')
+                                                    <span><i class="fas fa-university me-1"></i> BNI</span>
+                                                @elseif($payment->payment_method == 'mandiri')
+                                                    <span><i class="fas fa-university me-1"></i> Mandiri</span>
+                                                @elseif($payment->payment_method == 'e_wallet')
+                                                    <span><i class="fas fa-mobile-alt me-1"></i> E-Wallet</span>
                                                 @else
-                                                    <span>{{ $payment->payment_method }}</span>
+                                                    <span>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -110,16 +112,18 @@
                                                                 <p class="fw-bold mb-0">{{ number_format($payment->amount, 0, ',', '.') }} IDR</p>
                                                             </div>
                                                             <div class="col-md-6 mb-3">
-                                                                <p class="text-muted mb-1">Payment Method</p>
+                                                                <p class="text-muted mb-1">Metode Pembayaran</p>
                                                                 <p class="fw-bold mb-0">
-                                                                    @if($payment->payment_method == 'bank_transfer')
-                                                                        <i class="fas fa-university me-1"></i> Bank Transfer
-                                                                    @elseif($payment->payment_method == 'credit_card')
-                                                                        <i class="fas fa-credit-card me-1"></i> Credit Card
-                                                                    @elseif($payment->payment_method == 'cash')
-                                                                        <i class="fas fa-money-bill-wave me-1"></i> Cash
+                                                                    @if($payment->payment_method == 'bca')
+                                                                        <i class="fas fa-university me-1"></i> BCA
+                                                                    @elseif($payment->payment_method == 'bni')
+                                                                        <i class="fas fa-university me-1"></i> BNI
+                                                                    @elseif($payment->payment_method == 'mandiri')
+                                                                        <i class="fas fa-university me-1"></i> Mandiri
+                                                                    @elseif($payment->payment_method == 'e_wallet')
+                                                                        <i class="fas fa-mobile-alt me-1"></i> E-Wallet
                                                                     @else
-                                                                        {{ $payment->payment_method }}
+                                                                        {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
                                                                     @endif
                                                                 </p>
                                                             </div>
