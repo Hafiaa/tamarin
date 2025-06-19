@@ -11,7 +11,7 @@
 }
 
 .food-card.green {
-    background-color: #4CAF50;
+    background-color: #b9c24b;
     color: #FFFFFF;
 }
 
@@ -21,7 +21,7 @@
 }
 
 .food-card .price-tag {
-    background-color: #CDDC39;
+    background-color: #b9c24b;
     color: #333333;
     font-weight: bold;
     border-radius: 9999px;
@@ -36,7 +36,7 @@
 }
 
 .food-card .order-btn {
-    background-color: #8D6E63;
+    background-color: #b9c24b;
     color: white;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;

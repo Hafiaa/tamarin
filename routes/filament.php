@@ -13,7 +13,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Illuminate\Support\Facades\Route;
 
 // Filament Admin Panel Routes
-Route::domain(config('filament.domain'))
+Route::prefix('admin')
     ->middleware([
         'web',
         EncryptCookies::class,
@@ -28,7 +28,11 @@ Route::domain(config('filament.domain'))
     ])
     ->group(function () {
         // Filament will automatically register routes for resources
+        Route::get('/login', '\Filament\Http\Controllers\Auth\LoginController@create')
+            ->name('filament.admin.auth.login');
+        
+        Route::post('/login', '\Filament\Http\Controllers\Auth\LoginController@store');
     });
 
 // Ensure the admin panel is accessible
-Route::redirect('/admin', '/admin/dashboard');
+Route::redirect('/admin', '/admin/login');

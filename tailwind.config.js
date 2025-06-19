@@ -8,13 +8,15 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                // Primary color
+                'primary': '#b9c24b',
                 // Food card colors
-                'food-green': '#4CAF50',
+                'food-green': '#b9c24b',  // Updated to primary green
                 'food-orange': '#FFC107',
                 // Button colors
-                'food-button': '#8D6E63',
+                'food-button': '#b9c24b',  // Updated to primary green
                 // Price bubble
-                'price-bubble': '#CDDC39',
+                'price-bubble': '#b9c24b', // Updated to primary green
                 // Text colors
                 'food-text': '#FFFFFF',
                 'food-dark': '#333333',

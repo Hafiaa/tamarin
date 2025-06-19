@@ -238,7 +238,6 @@ class Payment extends Model implements HasMedia
             ->useFallbackPath(public_path('images/placeholder.jpg'))
             ->singleFile()
             ->withResponsiveImages()
-            ->preserveOriginal()
-            ->directory('payment_proofs');
+            ->path('payment_proofs');
     }
 }

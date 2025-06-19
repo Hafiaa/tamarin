@@ -16,6 +16,30 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <style>
+        :root {
+            --bs-primary: #b9c24b !important;
+            --bs-primary-rgb: 185, 194, 75 !important;
+        }
+        .btn-primary, .bg-primary {
+            background-color: #b9c24b !important;
+            border-color: #b9c24b !important;
+        }
+        .btn-outline-primary {
+            color: #b9c24b !important;
+            border-color: #b9c24b !important;
+        }
+        .btn-outline-primary:hover {
+            background-color: #b9c24b !important;
+            color: #fff !important;
+        }
+        .text-primary {
+            color: #b9c24b !important;
+        }
+        .badge.bg-primary {
+            background-color: #b9c24b !important;
+        }
+    </style>
 
     @stack('styles')
 </head>

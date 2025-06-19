@@ -93,7 +93,7 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="badge bg-primary">{{ $package->eventType->name ?? 'Umum' }}</span>
+                                        <span class="badge bg-primary" style="background-color: #b9c24b !important;">{{ $package->eventType->name ?? 'Umum' }}</span>
                                         <span class="text-primary fw-bold">
                                             Mulai {{ number_format($package->base_price, 0, ',', '.') }} IDR
                                         </span>
@@ -118,11 +118,13 @@
                                 <div class="card-footer bg-white border-top-0 pt-0">
                                     <div class="d-grid gap-2">
                                         <a href="{{ route('events.show', $package->slug) }}" 
-                                           class="btn btn-outline-primary btn-sm">
+                                           class="btn btn-outline-primary btn-sm"
+                                           style="color: #b9c24b !important; border-color: #b9c24b !important;">
                                             <i class="fas fa-eye me-1"></i> Lihat Detail
                                         </a>
                                         <a href="{{ route('reservations.create', $package->id) }}" 
-                                           class="btn btn-primary btn-sm">
+                                           class="btn btn-primary btn-sm"
+                                           style="background-color: #b9c24b !important; border-color: #b9c24b !important;">
                                             <i class="fas fa-calendar-check me-1"></i> Pesan Sekarang
                                         </a>
                                     </div>
@@ -132,7 +134,8 @@
                     @endforeach
                 </div>
                 <div class="text-center mt-4">
-                    <a href="{{ route('events.index') }}" class="btn btn-outline-primary">
+                    <a href="{{ route('events.index') }}" class="btn btn-outline-primary" 
+                       style="color: #b9c24b !important; border-color: #b9c24b !important;">
                         <i class="fas fa-list me-1"></i> Lihat Semua Paket
                     </a>
                 </div>

@@ -8,5 +8,55 @@
     :root {
         --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
             'Segoe UI Symbol', 'Noto Color Emoji';
+        --bs-primary: #b9c24b !important;
+        --bs-primary-rgb: 185, 194, 75 !important;
     }
+}
+
+/* Override Bootstrap primary colors */
+.btn-primary,
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active,
+.show > .btn-primary.dropdown-toggle,
+.bg-primary,
+.badge.bg-primary,
+.badge.bg-primary[href]:hover,
+.badge.bg-primary[href]:focus,
+.btn-outline-primary,
+.btn-outline-primary:not(:disabled):not(.disabled):active,
+.btn-outline-primary:not(:disabled):not(.disabled).active,
+.show > .btn-outline-primary.dropdown-toggle {
+    --bs-primary: #b9c24b !important;
+    --bs-primary-rgb: 185, 194, 75 !important;
+    background-color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+    color: #fff !important;
+}
+
+.btn-outline-primary,
+.btn-outline-primary:not(:disabled):not(.disabled):active,
+.btn-outline-primary:not(:disabled):not(.disabled).active,
+.show > .btn-outline-primary.dropdown-toggle {
+    background-color: transparent !important;
+    color: var(--bs-primary) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--bs-primary) !important;
+    border-color: var(--bs-primary) !important;
+    color: #fff !important;
+}
+
+.text-primary,
+.text-primary:hover,
+.text-primary:focus {
+    --bs-primary: #b9c24b !important;
+    --bs-primary-rgb: 185, 194, 75 !important;
+    color: var(--bs-primary) !important;
+}
+
+/* Specific overrides for badges */
+.badge.bg-primary {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
 }

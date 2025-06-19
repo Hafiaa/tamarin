@@ -95,7 +95,26 @@ return [
     | such as the routes for downloading exports and failed import rows.
     |
     */
-
     'system_route_prefix' => 'filament',
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Path Configuration
+    |--------------------------------------------------------------------------
+    |
+    | This is the URI path where Filament will be accessible from.
+    |
+    */
+    'path' => 'admin',
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Domain Configuration
+    |--------------------------------------------------------------------------
+    |
+    | You may specify a domain where Filament should be accessible from.
+    |
+    */
+    'domain' => null,
 
 ];
