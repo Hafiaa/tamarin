@@ -58,12 +58,22 @@ class EventController extends Controller
         }
         
         // Eager load relationships
-        $package->load(['eventType', 'serviceItems']);
+        // Eager load media relationships
+        $package->load([
+            'eventType', 
+            'serviceItems',
+            'media' => function($query) {
+                $query->whereIn('collection_name', ['featured_image', 'gallery']);
+            }
+        ]);
             
-        // Get related packages (same event type)
+        // Get related packages (same event type) with media
         $relatedPackages = PackageTemplate::where('is_active', true)
             ->where('event_type_id', $package->event_type_id)
             ->where('id', '!=', $package->id)
+            ->with(['media' => function($query) {
+                $query->whereIn('collection_name', ['featured_image', 'gallery']);
+            }])
             ->take(3)
             ->get();
             

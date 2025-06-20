@@ -37,8 +37,25 @@
         </div>
     </div>
 
+    <!-- Header with Background Image -->
+    <div class="header-image mb-5">
+        <div class="position-relative">
+            <img src="{{ asset('images/event-header.jpg') }}" alt="Paket Acara" class="img-fluid w-100" style="max-height: 400px; object-fit: cover;">
+            <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
+                <h1 class="display-4 fw-bold">
+                    @if($selectedEventType)
+                        {{ $selectedEventType->name }}
+                    @else
+                        Semua Paket Acara
+                    @endif
+                </h1>
+                <p class="lead">Temukan paket acara terbaik untuk momen spesial Anda</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Event Packages Section -->
-    <section class="event-packages-section py-5">
+    <section class="event-packages-section pb-5">
         <div class="container">
             <!-- Event Type Filter -->
             <div class="event-filter mb-5">
@@ -77,26 +94,54 @@
                     <div class="col-xl-4 col-md-6 mb-4">
                         <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
                             <div class="position-relative" style="height: 200px; background-color: #f8f9fa; overflow: hidden;">
-                                @if($package->getFirstMediaUrl('cover_image'))
-                                    <img src="{{ $package->getFirstMediaUrl('cover_image') }}" 
+                                @php
+                                    // Load media relationship if not already loaded
+                                    if (!$package->relationLoaded('media')) {
+                                        $package->load('media');
+                                    }
+                                    
+                                    $featuredImage = $package->getFirstMedia('featured_image');
+                                    $galleryMedia = $package->getMedia('gallery');
+                                    $firstImage = $featuredImage ?? $galleryMedia->first();
+                                @endphp
+                                
+                                @if($firstImage)
+                                    <img src="{{ $firstImage->getUrl('preview') }}" 
                                          class="card-img-top h-100 w-100" 
                                          alt="{{ $package->name }}"
-                                         style="object-fit: cover;">
+                                         style="object-fit: cover;"
+                                         onerror="this.onerror=null; this.src='{{ asset('images/placeholder.jpg') }}';">
                                 @else
-                                    <div class="d-flex align-items-center justify-content-center h-100 w-100 bg-light">
-                                        <i class="fas fa-image fa-4x text-muted"></i>
+                                    <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                                        <div class="text-center text-muted p-4">
+                                            <i class="fas fa-image fa-3x mb-3"></i>
+                                            <p class="mb-0">Tidak ada gambar</p>
+                                        </div>
                                     </div>
                                 @endif
                                 
-                                @if($package->is_featured)
-                                    <span class="position-absolute top-0 start-0 bg-warning text-dark px-2 py-1 m-2 rounded">
-                                        <i class="fas fa-star me-1"></i> Unggulan
-                                    </span>
-                                @endif
-                                @if($package->discount > 0)
-                                    <span class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 m-2 rounded">
-                                        <i class="fas fa-tag me-1"></i> Diskon {{ $package->discount }}%
-                                    </span>
+                                <div class="position-absolute top-0 start-0 w-100 d-flex justify-content-between p-2">
+                                    @if($package->is_featured)
+                                        <span class="bg-warning text-dark px-2 py-1 rounded">
+                                            <i class="fas fa-star me-1"></i> Unggulan
+                                        </span>
+                                    @else
+                                        <span></span>
+                                    @endif
+                                    
+                                    @if($package->discount > 0)
+                                        <span class="bg-danger text-white px-2 py-1 rounded">
+                                            <i class="fas fa-tag me-1"></i> Diskon {{ $package->discount }}%
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                @if($galleryMedia->count() > 0)
+                                    <div class="position-absolute bottom-0 end-0 m-2">
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-images me-1"></i> {{ $galleryMedia->count() }}
+                                        </span>
+                                    </div>
                                 @endif
                             </div>
                             <div class="card-body">
@@ -225,7 +270,7 @@
 @push('styles')
 <style>
     .bg-gradient-primary {
-        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        background: linear-gradient(135deg, #4e73df 0%,rgba(52, 181, 32, 0.74) 100%);
     }
     
     .hover-shadow {

@@ -27,24 +27,50 @@
                 <!-- Package Images -->
                 <div class="col-lg-6 mb-4 mb-lg-0">
                     <div class="package-gallery">
-                        <div class="main-image mb-3">
-                            <img src="{{ $package->getFirstMediaUrl('cover_image') ?: asset('images/placeholder.jpg') }}" 
-                                 class="img-fluid rounded" alt="{{ $package->name }}">
-                        </div>
-                        <div class="gallery-thumbnails row g-2">
-                            @if($package->getMedia('gallery')->count() > 0)
-                                @foreach($package->getMedia('gallery') as $media)
+                        @php
+                            // Load media relationship if not already loaded
+                            if (!$package->relationLoaded('media')) {
+                                $package->load('media');
+                            }
+                            
+                            $featuredImage = $package->getFirstMedia('featured_image');
+                            $galleryMedia = $package->getMedia('gallery');
+                            $hasGallery = $galleryMedia->count() > 0;
+                            $allMedia = collect([$featuredImage])->filter()->merge($galleryMedia);
+                            $hasAnyImage = $allMedia->count() > 0;
+                        @endphp
+                        
+                        @if($hasAnyImage)
+                            <div class="main-image mb-3">
+                                <img src="{{ $allMedia->first()->getUrl('preview') }}" 
+                                     class="img-fluid rounded w-100" 
+                                     alt="{{ $package->name }}"
+                                     id="mainPackageImage"
+                                     style="height: 400px; object-fit: cover;"
+                                     onerror="this.onerror=null; this.src='{{ asset('images/placeholder.jpg') }}';">
+                            </div>
+                            
+                            <div class="gallery-thumbnails row g-2">
+                                @foreach($allMedia as $index => $media)
                                     <div class="col-3">
-                                        <img src="{{ $media->getUrl() }}" class="img-fluid rounded" alt="{{ $package->name }}">
+                                        <img src="{{ $media->getUrl('thumb') }}" 
+                                             class="img-fluid rounded cursor-pointer{{ $index === 0 ? ' border border-primary' : '' }}" 
+                                             alt="{{ $package->name }}"
+                                             style="height: 80px; width: 100%; object-fit: cover;"
+                                             onmouseover="document.getElementById('mainPackageImage').src='{{ $media->getUrl('preview') }}'; 
+                                                         this.classList.add('border', 'border-primary');"
+                                             onmouseout="this.classList.remove('border', 'border-primary');"
+                                             onclick="document.getElementById('mainPackageImage').src='{{ $media->getUrl('preview') }}';"
+                                             onerror="this.onerror=null; this.src='{{ asset('images/placeholder.jpg') }}';">
                                     </div>
                                 @endforeach
-                            @else
-                                @for($i = 1; $i <= 4; $i++)
-                                    <div class="col-3">
-                                        <img src="{{ asset('images/placeholder-' . $i . '.jpg') }}" class="img-fluid rounded" alt="Gallery Image">
-                                    </div>
-                                @endfor
-                            @endif
+                            </div>
+                        @else
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-image fa-4x mb-3"></i>
+                                <p class="mb-0">Tidak ada gambar yang tersedia</p>
+                            </div>
+                        @endif
                         </div>
                     </div>
                 </div>

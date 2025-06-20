@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class PackageTemplate extends Model implements HasMedia
 {
@@ -68,7 +69,99 @@ class PackageTemplate extends Model implements HasMedia
      */
     public function registerMediaCollections(): void
     {
+        // Collection untuk galeri foto
         $this->addMediaCollection('gallery')
-            ->useDisk('public');
+            ->useDisk('public')
+            ->useFallbackUrl(asset('images/placeholder.jpg'))
+            ->useFallbackPath(public_path('images/placeholder.jpg'))
+            ->withResponsiveImages()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ])
+            ->registerMediaConversions(function (Media $media = null) {
+                $this->addMediaConversion('thumb')
+                    ->width(300)
+                    ->height(200)
+                    ->sharpen(10);
+                    
+                $this->addMediaConversion('preview')
+                    ->width(800)
+                    ->height(600)
+                    ->sharpen(10);
+            });
+            
+        // Collection untuk foto utama
+        $this->addMediaCollection('featured_image')
+            ->useDisk('public')
+            ->useFallbackUrl(asset('images/placeholder.jpg'))
+            ->useFallbackPath(public_path('images/placeholder.jpg'))
+            ->singleFile()
+            ->withResponsiveImages()
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+            ])
+            ->registerMediaConversions(function (Media $media = null) {
+                $this->addMediaConversion('thumb')
+                    ->width(300)
+                    ->height(200)
+                    ->sharpen(10);
+                    
+                $this->addMediaConversion('preview')
+                    ->width(1200)
+                    ->height(800)
+                    ->sharpen(10);
+            });
+    }
+    
+    /**
+     * Get the URL of the featured image.
+     *
+     * @return string
+     */
+    public function getFeaturedImageUrlAttribute()
+    {
+        return $this->hasMedia('featured_image') 
+            ? $this->getFirstMedia('featured_image')->getUrl('preview')
+            : asset('images/placeholder.jpg');
+    }
+    
+    /**
+     * Get the URL of the first gallery image.
+     *
+     * @return string
+     */
+    public function getFirstGalleryImageUrlAttribute()
+    {
+        return $this->hasMedia('gallery')
+            ? $this->getFirstMedia('gallery')->getUrl('preview')
+            : asset('images/placeholder.jpg');
+    }
+    
+    /**
+     * Get the thumbnail URL of the featured image.
+     *
+     * @return string
+     */
+    public function getFeaturedImageThumbnailUrlAttribute()
+    {
+        return $this->hasMedia('featured_image')
+            ? $this->getFirstMedia('featured_image')->getUrl('thumb')
+            : asset('images/placeholder.jpg');
+    }
+    
+    /**
+     * Get the thumbnail URL of the first gallery image.
+     *
+     * @return string
+     */
+    public function getFirstGalleryImageThumbnailUrlAttribute()
+    {
+        return $this->hasMedia('gallery')
+            ? $this->getFirstMedia('gallery')->getUrl('thumb')
+            : asset('images/placeholder.jpg');
     }
 }
