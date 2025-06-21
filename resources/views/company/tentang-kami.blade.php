@@ -83,17 +83,67 @@
             </div>
             
             <div class="row g-4">
-                @for ($i = 1; $i <= 6; $i++)
-                    <div class="col-md-4 col-lg-3">
-                        <a href="{{ asset('images/gallery/event-' . $i . '.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Event Image {{ $i }}">
-                            <img src="{{ asset('images/gallery/event-' . $i . '.jpg') }}" alt="Galeri {{ $i }}" class="img-fluid rounded shadow-sm">
-                        </a>
-                    </div>
-                @endfor
+                <!-- Gambar 1 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding3.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding3.jpg') }}" alt="Galeri 1" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 2 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding5.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding5.jpg') }}" alt="Galeri 2" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 3 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding7.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding7.jpg') }}" alt="Galeri 3" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 4 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding9.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding9.jpg') }}" alt="Galeri 4" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 5 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding13.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding13.jpg') }}" alt="Galeri 5" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 6 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding14.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding14.jpg') }}" alt="Galeri 6" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 7 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding12.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding12.jpg') }}" alt="Galeri 7" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
+                
+                <!-- Gambar 8 -->
+                <div class="col-md-4 col-lg-3">
+                    <a href="{{ asset('images/wedding16.jpg') }}" class="gallery-item" data-lightbox="gallery" data-title="Galeri Tamacafe">
+                        <img src="{{ asset('images/wedding16.jpg') }}" alt="Galeri 8" class="img-fluid rounded shadow-sm" loading="lazy">
+                    </a>
+                </div>
             </div>
             
             <div class="text-center mt-4">
-                <a href="#" class="btn btn-outline-primary">Lihat Lebih Banyak</a>
+                <a href="https://www.instagram.com/tamarincafe" target="_blank" class="btn btn-outline-primary">
+                    <i class="fab fa-instagram me-2"></i> Lihat Lebih Banyak di Instagram
+                </a>
             </div>
         </div>
     </section>
@@ -113,20 +163,18 @@
                             </div>
                             <div>
                                 <h5 class="h6 mb-1">Alamat</h5>
-                                <p class="mb-0">Jl. Contoh No. 123, Kota Bandung, Jawa Barat</p>
+                                <p class="mb-0">Jl. Manggala No.161, RT.007/RW.007, Deplu, Cipadu Jaya, Kec. Larangan, Kota Tangerang, Banten 15155</p>
                             </div>
                         </div>
-                        
                         <div class="d-flex mb-3">
                             <div class="icon-box bg-primary text-white rounded-circle me-3 flex-shrink-0">
                                 <i class="fas fa-phone"></i>
                             </div>
                             <div>
                                 <h5 class="h6 mb-1">Telepon</h5>
-                                <p class="mb-0">+62 123 4567 8901</p>
+                                <p class="mb-0">0813-1828-3874</p>
                             </div>
                         </div>
-                        
                         <div class="d-flex mb-3">
                             <div class="icon-box bg-primary text-white rounded-circle me-3 flex-shrink-0">
                                 <i class="fas fa-envelope"></i>
@@ -136,14 +184,13 @@
                                 <p class="mb-0">info@tamacafe.com</p>
                             </div>
                         </div>
-                        
                         <div class="d-flex">
                             <div class="icon-box bg-primary text-white rounded-circle me-3 flex-shrink-0">
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div>
                                 <h5 class="h6 mb-1">Jam Operasional</h5>
-                                <p class="mb-0">Senin - Minggu: 09:00 - 22:00 WIB</p>
+                                <p class="mb-0">Senin - Minggu: 11:00 - 22:00 WIB</p>
                             </div>
                         </div>
                     </div>
