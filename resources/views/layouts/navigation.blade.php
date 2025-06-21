@@ -9,11 +9,11 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Home</a>
+                    <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">Beranda</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {{ request()->routeIs('events.*') ? 'active' : '' }}" href="#" id="eventsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-calendar-alt me-1"></i> Acara
+                        <i class="fas fa-calendar-alt me-1"></i> Paket Acara
                     </a>
                     @php
                         $activeEventTypes = \App\Models\EventType::where('is_active', true)
@@ -59,26 +59,26 @@
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="menuDropdown">
                         <li>
-                            <a class="dropdown-item" href="{{ route('menu.cafe') }}">Cafe Menu</a>
+                            <a class="dropdown-item" href="{{ route('menu.cafe') }}">Menu Kafe</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ route('menu.event') }}">Event Menu</a>
+                            <a class="dropdown-item" href="{{ route('menu.event') }}">Menu Acara</a>
                         </li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle {{ request()->routeIs('company.*') ? 'active' : '' }}" href="#" id="companyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        About Us
+                        Tentang Kami
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="companyDropdown">
                         <li>
-                            <a class="dropdown-item" href="{{ route('company.about') }}">Our Story</a>
+                            <a class="dropdown-item" href="{{ route('company.about') }}">Profil Kami</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ route('company.gallery') }}">Gallery</a>
+                            <a class="dropdown-item" href="{{ route('company.gallery') }}">Galeri</a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="{{ route('company.contact') }}">Contact Us</a>
+                            <a class="dropdown-item" href="{{ route('company.contact') }}">Kontak</a>
                         </li>
                     </ul>
                 </li>
@@ -87,7 +87,7 @@
                 @auth
                     <!-- Create Custom Package Button -->
                     <a href="{{ route('custom-package.step1') }}" class="btn btn-sm btn-primary me-2 px-3 py-2">
-                        <i class="fas fa-magic me-1"></i> Create Custom Package
+                        <i class="fas fa-magic me-1"></i> Buat Paket Kustom
                     </a>
                 
                     <div class="dropdown">

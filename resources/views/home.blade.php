@@ -10,35 +10,35 @@
                 <div class="carousel-item active">
                     <img src="{{ asset('images/hero-1.jpg') }}" class="d-block w-100" alt="Tamacafe Event Space">
                     <div class="carousel-caption">
-                        <h1>Welcome to Tamacafe</h1>
-                        <p>Your perfect venue for memorable events and gatherings</p>
-                        <a href="{{ route('events.index') }}" class="btn btn-primary btn-lg">Explore Events</a>
+                        <h1>Selamat Datang di Tamacafe</h1>
+                        <p>Tempat sempurna untuk acara dan pertemuan yang tak terlupakan</p>
+                        <a href="{{ route('events.index') }}" class="btn btn-primary btn-lg">Jelajahi Acara</a>
                     </div>
                 </div>
                 <div class="carousel-item">
                     <img src="{{ asset('images/hero-2.jpg') }}" class="d-block w-100" alt="Tamacafe Cafe">
                     <div class="carousel-caption">
-                        <h1>Delicious Food & Drinks</h1>
-                        <p>Experience our exquisite menu crafted with passion</p>
-                        <a href="{{ route('menu.cafe') }}" class="btn btn-primary btn-lg">View Menu</a>
+                        <h1>Makanan & Minuman Lezat</h1>
+                        <p>Nikmati menu istimewa kami yang dibuat dengan penuh cinta</p>
+                        <a href="{{ route('menu.cafe') }}" class="btn btn-primary btn-lg">Lihat Menu</a>
                     </div>
                 </div>
                 <div class="carousel-item">
                     <img src="{{ asset('images/hero-3.jpg') }}" class="d-block w-100" alt="Tamacafe Events">
                     <div class="carousel-caption">
-                        <h1>Create Lasting Memories</h1>
-                        <p>Book your special event with us today</p>
-                        <a href="{{ route('reservations.create') }}" class="btn btn-primary btn-lg">Book Now</a>
+                        <h1>Buat Kenangan Tak Terlupakan</h1>
+                        <p>Pesan acara spesial Anda bersama kami hari ini</p>
+                        <a href="{{ route('reservations.create') }}" class="btn btn-primary btn-lg">Pesan Sekarang</a>
                     </div>
                 </div>
             </div>
             <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
+                <span class="visually-hidden">Sebelumnya</span>
             </button>
             <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
+                <span class="visually-hidden">Selanjutnya</span>
             </button>
         </div>
     </section>
