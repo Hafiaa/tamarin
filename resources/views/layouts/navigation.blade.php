@@ -66,21 +66,10 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {{ request()->routeIs('company.*') ? 'active' : '' }}" href="#" id="companyDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('company.tentang-kami') || request()->routeIs('company.about') ? 'active' : '' }}" href="{{ route('company.tentang-kami') }}">
                         Tentang Kami
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="companyDropdown">
-                        <li>
-                            <a class="dropdown-item" href="{{ route('company.about') }}">Profil Kami</a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="{{ route('company.gallery') }}">Galeri</a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="{{ route('company.contact') }}">Kontak</a>
-                        </li>
-                    </ul>
                 </li>
             </ul>
             <div class="d-flex align-items-center">

@@ -15,6 +15,16 @@ class CompanyProfileController extends Controller
      */
     public function about()
     {
+        return redirect()->route('company.tentang-kami');
+    }
+    
+    /**
+     * Display the integrated about us page with all sections.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function tentangKami()
+    {
         $aboutContent = Setting::get('about_content');
         $companyVision = Setting::get('company_vision');
         $companyMission = Setting::get('company_mission');
@@ -38,12 +48,19 @@ class CompanyProfileController extends Controller
             ]
         ];
         
-        return view('company.about', compact(
+        // Get gallery images (assuming you have a Gallery model)
+        $galleryImages = [];
+        for ($i = 1; $i <= 6; $i++) {
+            $galleryImages[] = asset('images/gallery/event-' . $i . '.jpg');
+        }
+        
+        return view('company.tentang-kami', compact(
             'aboutContent',
             'companyVision',
             'companyMission',
             'teamMembers',
-            'socialMedia'
+            'socialMedia',
+            'galleryImages'
         ));
     }
     

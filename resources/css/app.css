@@ -4,6 +4,35 @@
 
 @import './food-styles.css';
 
+/* Custom Success Color */
+:root {
+    --bs-success: #5b7917;
+    --bs-success-rgb: 91, 121, 23;
+}
+
+.btn-success,
+.bg-success,
+.badge.bg-success,
+.alert-success {
+    background-color: #5b7917 !important;
+    border-color: #5b7917 !important;
+}
+
+.text-success,
+.alert-success {
+    color: #5b7917 !important;
+}
+
+.btn-outline-success {
+    color: #5b7917;
+    border-color: #5b7917;
+}
+
+.btn-outline-success:hover {
+    background-color: #5b7917;
+    color: #fff;
+}
+
 @layer base {
     :root {
         --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',

@@ -25,11 +25,12 @@ Route::get('/events/{package:slug}', [EventController::class, 'show'])->name('ev
 Route::get('/menu/cafe', [MenuController::class, 'cafeMenu'])->name('menu.cafe');
 Route::get('/menu/event', [MenuController::class, 'eventMenu'])->name('menu.event');
 
-// Company Profile Routes
+// Company Profile Routes - Redirect old routes to new integrated page
 Route::get('/about-us', [CompanyProfileController::class, 'about'])->name('company.about');
-Route::get('/contact', [CompanyProfileController::class, 'contact'])->name('company.contact');
+Route::get('/tentang-kami', [CompanyProfileController::class, 'tentangKami'])->name('company.tentang-kami');
+Route::redirect('/contact', '/tentang-kami#kontak')->name('company.contact');
 Route::post('/contact', [CompanyProfileController::class, 'sendContactForm'])->name('company.contact.send');
-Route::get('/gallery', [CompanyProfileController::class, 'gallery'])->name('company.gallery');
+Route::redirect('/gallery', '/tentang-kami#galeri')->name('company.gallery');
 
 // Blocked Dates Routes
 Route::get('/blocked-dates', [ReservationController::class, 'getBlockedDates'])->name('blocked-dates.list');
