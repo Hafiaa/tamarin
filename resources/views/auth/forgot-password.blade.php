@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Forgot Password')
+@section('title', 'Lupa Kata Sandi')
 
 @section('content')
 <div class="container py-5">
@@ -8,11 +8,11 @@
         <div class="col-md-8 col-lg-6">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Reset Password</h4>
+                    <h4 class="mb-0">Atur Ulang Kata Sandi</h4>
                 </div>
                 <div class="card-body p-4">
                     <div class="mb-4">
-                        <p>Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.</p>
+                        <p>Lupa kata sandi Anda? Tidak masalah. Beri tahu kami alamat email Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda.</p>
                     </div>
 
                     @if (session('status'))
@@ -25,7 +25,7 @@
                         @csrf
 
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email Address</label>
+                            <label for="email" class="form-label">Alamat Email</label>
                             <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
                             @error('email')
                                 <div class="invalid-feedback">
@@ -36,13 +36,13 @@
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
-                                Email Password Reset Link
+                                Kirim Tautan Atur Ulang Kata Sandi
                             </button>
                         </div>
                     </form>
                 </div>
                 <div class="card-footer bg-light">
-                    <p class="mb-0 text-center"><a href="{{ route('login') }}" class="text-decoration-none">Back to Login</a></p>
+                    <p class="mb-0 text-center"><a href="{{ route('login') }}" class="text-decoration-none">Kembali ke Halaman Masuk</a></p>
                 </div>
             </div>
         </div>

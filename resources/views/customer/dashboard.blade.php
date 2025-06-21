@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Dasbor')
 
 @section('content')
 <!-- Page Header -->
@@ -8,12 +8,12 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-8">
-                <h1 class="fw-bold mb-0">Welcome, {{ $user->name }}</h1>
-                <p class="text-muted mb-0">Manage your reservations and account</p>
+                <h1 class="fw-bold mb-0">Selamat Datang, {{ $user->name }}</h1>
+                <p class="text-muted mb-0">Kelola pemesanan dan akun Anda</p>
             </div>
             <div class="col-md-4 text-md-end">
                 <a href="{{ route('events.index') }}" class="btn btn-primary">
-                    <i class="fas fa-plus-circle me-2"></i> Book New Event
+                    <i class="fas fa-plus-circle me-2"></i> Pesan Acara Baru
                 </a>
             </div>
         </div>
@@ -31,12 +31,12 @@
                         <i class="fas fa-calendar-alt fa-2x"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Upcoming Events</h5>
+                        <h5 class="card-title">Acara Mendatang</h5>
                         <p class="card-text display-6 fw-bold">{{ $upcomingReservations->count() }}</p>
                     </div>
                 </div>
                 <div class="card-footer bg-white border-0">
-                    <a href="{{ route('customer.dashboard.reservations') }}" class="text-decoration-none">View all reservations <i class="fas fa-arrow-right ms-1"></i></a>
+                    <a href="{{ route('customer.dashboard.reservations') }}" class="text-decoration-none">Lihat semua pemesanan <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
@@ -47,12 +47,12 @@
                         <i class="fas fa-credit-card fa-2x"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Pending Payments</h5>
+                        <h5 class="card-title">Pembayaran Tertunda</h5>
                         <p class="card-text display-6 fw-bold">{{ $pendingPayments }}</p>
                     </div>
                 </div>
                 <div class="card-footer bg-white border-0">
-                    <a href="{{ route('customer.dashboard.payments') }}" class="text-decoration-none">View all payments <i class="fas fa-arrow-right ms-1"></i></a>
+                    <a href="{{ route('customer.dashboard.payments') }}" class="text-decoration-none">Lihat riwayat pembayaran <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
@@ -63,12 +63,12 @@
                         <i class="fas fa-user-edit fa-2x"></i>
                     </div>
                     <div>
-                        <h5 class="card-title">Account</h5>
-                        <p class="card-text">Manage your profile</p>
+                        <h5 class="card-title">Status Akun</h5>
+                        <p class="card-text">Kelola profil Anda</p>
                     </div>
                 </div>
                 <div class="card-footer bg-white border-0">
-                    <a href="{{ route('customer.dashboard.profile.edit') }}" class="text-decoration-none">Edit profile <i class="fas fa-arrow-right ms-1"></i></a>
+                    <a href="{{ route('customer.dashboard.profile.edit') }}" class="text-decoration-none">Perbarui profil <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Upcoming Reservations</h5>
+                    <h5 class="mb-0">Pemesanan Mendatang</h5>
                 </div>
                 <div class="card-body">
                     @if($upcomingReservations->count() > 0)
@@ -87,11 +87,11 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Event</th>
-                                        <th>Date</th>
+                                        <th>Acara</th>
+                                        <th>Tanggal</th>
+                                        <th>Tamu</th>
                                         <th>Status</th>
-                                        <th>Payment</th>
-                                        <th>Actions</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -109,30 +109,23 @@
                                                 <small class="text-muted">{{ $reservation->event_time }}</small>
                                             </td>
                                             <td>
+                                                {{ $reservation->guest_count }} Tamu
+                                            </td>
+                                            <td>
                                                 @if($reservation->status == 'pending')
-                                                    <span class="badge bg-warning">Pending</span>
+                                                    <span class="badge bg-warning">Tertunda</span>
                                                 @elseif($reservation->status == 'confirmed')
-                                                    <span class="badge bg-success">Confirmed</span>
+                                                    <span class="badge bg-success">Terkonfirmasi</span>
                                                 @elseif($reservation->status == 'completed')
-                                                    <span class="badge bg-info">Completed</span>
+                                                    <span class="badge bg-info">Selesai</span>
                                                 @elseif($reservation->status == 'cancelled')
-                                                    <span class="badge bg-danger">Cancelled</span>
+                                                    <span class="badge bg-danger">Dibatalkan</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                @php
-                                                    $paidAmount = $reservation->payments->where('status', 'approved')->sum('amount');
-                                                    $paymentPercentage = $reservation->total_price > 0 ? ($paidAmount / $reservation->total_price) * 100 : 0;
-                                                @endphp
-                                                <div class="progress" style="height: 10px;">
-                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ $paymentPercentage }}%;" aria-valuenow="{{ $paymentPercentage }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                                </div>
-                                                <small class="d-block mt-1">{{ number_format($paidAmount, 0, ',', '.') }} / {{ number_format($reservation->total_price, 0, ',', '.') }} IDR</small>
-                                            </td>
-                                            <td>
-                                                <a href="{{ route('customer.dashboard.reservations.show', $reservation->id) }}" class="btn btn-sm btn-outline-primary me-1">View</a>
+                                                <a href="{{ route('customer.dashboard.reservations.show', $reservation->id) }}" class="btn btn-sm btn-outline-primary me-1">Lihat</a>
                                                 @if($paidAmount < $reservation->total_price)
-                                                    <a href="{{ route('customer.dashboard.payments.create', $reservation->id) }}" class="btn btn-sm btn-success">Pay</a>
+                                                    <a href="{{ route('customer.dashboard.payments.create', $reservation->id) }}" class="btn btn-sm btn-success">Bayar</a>
                                                 @endif
                                             </td>
                                         </tr>
@@ -142,15 +135,15 @@
                         </div>
                     @else
                         <div class="text-center py-4">
-                            <img src="{{ asset('images/no-events.svg') }}" alt="No Events" class="img-fluid mb-3" style="max-width: 200px;">
-                            <h5>No Upcoming Reservations</h5>
-                            <p class="text-muted">You don't have any upcoming events scheduled.</p>
-                            <a href="{{ route('events.index') }}" class="btn btn-primary">Book an Event</a>
+                            <img src="{{ asset('images/no-events.svg') }}" alt="Tidak Ada Acara" class="img-fluid mb-3" style="max-width: 200px;">
+                            <h5>Tidak Ada Pemesanan Mendatang</h5>
+                            <p class="text-muted">Anda belum memiliki jadwal acara mendatang.</p>
+                            <a href="{{ route('events.index') }}" class="btn btn-primary mt-2">Pesan Acara</a>
                         </div>
                     @endif
                 </div>
                 <div class="card-footer bg-white">
-                    <a href="{{ route('customer.dashboard.reservations') }}" class="text-decoration-none">View all reservations <i class="fas fa-arrow-right ms-1"></i></a>
+                    <a href="{{ route('customer.dashboard.reservations') }}" class="text-decoration-none">Lihat semua pemesanan <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
@@ -161,7 +154,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0">Quick Links</h5>
+                    <h4 class="mb-4">Tautan Cepat</h4>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">

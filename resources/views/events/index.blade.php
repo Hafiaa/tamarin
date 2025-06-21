@@ -3,47 +3,13 @@
 @section('title', 'Paket Acara - ' . config('app.name'))
 
 @section('content')
-    <!-- Page Header -->
-    <div class="page-header bg-light py-5 position-relative">
-        <div class="container position-relative">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <h1 class="page-title mb-3">
-                        @if(isset($selectedEventType))
-                            Paket {{ $selectedEventType->name }}
-                        @else
-                            Pilihan Paket Acara
-                        @endif
-                    </h1>
-                    <p class="lead text-muted mb-4">
-                        Temukan paket acara terbaik untuk hari spesial Anda. Kami menawarkan berbagai pilihan paket yang dapat disesuaikan dengan kebutuhan Anda.
-                    </p>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('home') }}"><i class="fas fa-home"></i> Beranda</a></li>
-                            @if(isset($selectedEventType))
-                                <li class="breadcrumb-item"><a href="{{ route('events.index') }}">Paket Acara</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">{{ $selectedEventType->name }}</li>
-                            @else
-                                <li class="breadcrumb-item active" aria-current="page">Semua Paket</li>
-                            @endif
-                        </ol>
-                    </nav>
-                </div>
-                <div class="col-lg-4 d-none d-lg-block">
-                    <img src="{{ asset('images/event-header.jpg') }}" alt="Paket Acara" class="img-fluid rounded shadow">
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Header with Background Image -->
     <div class="header-image mb-5">
         <div class="position-relative">
             <img src="{{ asset('images/event-header.jpg') }}" alt="Paket Acara" class="img-fluid w-100" style="max-height: 400px; object-fit: cover;">
             <div class="position-absolute top-50 start-50 translate-middle text-center text-white">
                 <h1 class="display-4 fw-bold">
-                    @if($selectedEventType)
+                    @if(isset($selectedEventType))
                         {{ $selectedEventType->name }}
                     @else
                         Semua Paket Acara

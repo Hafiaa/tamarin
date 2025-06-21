@@ -227,41 +227,11 @@
         </div>
     </section>
 
-    <!-- Tim Kami Section -->
-    <section class="py-5">
-        <div class="container">
-            <div class="section-header text-center mb-5">
-                <h2 class="section-title">Tim Kami</h2>
-                <p class="section-subtitle">Orang-orang berbakat di balik kesuksesan Tamacafe</p>
-            </div>
-            
-            <div class="row">
-                @for ($i = 1; $i <= 4; $i++)
-                    <div class="col-md-6 col-lg-3 mb-4">
-                        <div class="team-member text-center">
-                            <div class="member-image mb-3">
-                                <img src="{{ asset('images/team-' . $i . '.jpg') }}" alt="Team Member {{ $i }}" class="img-fluid rounded-circle">
-                            </div>
-                            <h4 class="h5 mb-1">Nama Anggota {{ $i }}</h4>
-                            <p class="text-muted mb-2">Jabatan</p>
-                            <div class="social-links">
-                                <a href="#" class="text-primary me-2"><i class="fab fa-facebook-f"></i></a>
-                                <a href="#" class="text-primary me-2"><i class="fab fa-twitter"></i></a>
-                                <a href="#" class="text-primary me-2"><i class="fab fa-linkedin-in"></i></a>
-                                <a href="#" class="text-primary"><i class="fab fa-instagram"></i></a>
-                            </div>
-                        </div>
-                    </div>
-                @endfor
-            </div>
-        </div>
-    </section>
-
-    <!-- Testimoni Section -->
+<!-- Testimoni Section -->
     <section class="py-5 bg-light">
         <div class="container">
             <div class="section-header text-center mb-5">
-                <h2 class="section-title">Apa Kata Mereka</h2>
+                <h2 class="section-title">TESTIMONI</h2>
                 <p class="section-subtitle">Testimoni dari pelanggan kami</p>
             </div>
             
