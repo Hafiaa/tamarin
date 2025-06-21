@@ -24,10 +24,10 @@
             <div class="col-md-4">
                 <h5 class="mb-3">Contact Info</h5>
                 <ul class="list-unstyled">
-                    <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> {{ \App\Models\Setting::get('company_address', '123 Main Street, City, Country') }}</li>
-                    <li class="mb-2"><i class="fas fa-phone me-2"></i> {{ \App\Models\Setting::get('company_phone', '+1 234 567 890') }}</li>
-                    <li class="mb-2"><i class="fas fa-envelope me-2"></i> {{ \App\Models\Setting::get('company_email', 'info@tamacafe.com') }}</li>
-                    <li><i class="fas fa-clock me-2"></i> {{ \App\Models\Setting::get('business_hours', 'Mon-Sun: 8:00 AM - 10:00 PM') }}</li>
+                    <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> {{ \App\Models\Setting::get('company_address', 'Jl. Manggala No.161, RT.007/RW.007, Deplu, Cipadu Jaya, Kec. Larangan, Kota Tangerang, Banten 15155') }}</li>
+                    <li class="mb-2"><i class="fas fa-phone me-2"></i> {{ \App\Models\Setting::get('company_phone', '0813-1828-3874') }}</li>
+                    <!-- <li class="mb-2"><i class="fas fa-envelope me-2"></i> {{ \App\Models\Setting::get('company_email', 'info@tamacafe.com') }}</li> -->
+                    <li><i class="fas fa-clock me-2"></i> {{ \App\Models\Setting::get('business_hours', 'Mon-Sun: 11:00 AM - 10:00 PM') }}</li>
                 </ul>
             </div>
         </div>

@@ -321,7 +321,7 @@
     }
     
     .video-play-button:hover {
-        background-color: #007bff;
+        background-color: #b9c24b;
         transform: translate(-50%, -50%) scale(1.1);
     }
     

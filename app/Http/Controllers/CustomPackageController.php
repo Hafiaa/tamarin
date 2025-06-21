@@ -7,126 +7,404 @@ use App\Models\ServiceItem;
 use App\Models\EventType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CustomPackageController extends Controller
 {
     /**
      * Show the wizard step 1 - Event Details
+     * 
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function step1(Request $request)
     {
-        $eventTypes = EventType::where('is_active', true)->get();
-        
-        // If coming from next step, get the old input
-        $reservation = $request->old() ? new Reservation($request->old()) : null;
-        
-        $currentStep = 1;
-        
-        return view('custom-package.step1', compact('eventTypes', 'reservation', 'currentStep'));
+        try {
+            $eventTypes = EventType::where('is_active', true)
+                ->orderBy('name')
+                ->get();
+            
+            $reservation = $request->old() ? new Reservation($request->old()) : null;
+            
+            return view('custom-package.step1', [
+                'eventTypes' => $eventTypes,
+                'reservation' => $reservation,
+                'currentStep' => 1,
+                'progress' => 33
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error in step1: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan. Silakan coba lagi.');
+        }
     }
     
     /**
      * Process step 1 and go to step 2
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function processStep1(Request $request)
     {
-        $validated = $request->validate([
-            'event_type_id' => 'required|exists:event_types,id',
-            'event_date' => 'required|date|after_or_equal:today',
-            'event_time' => 'required|date_format:H:i',
-            'guest_count' => 'required|integer|min:1',
-            'bride_name' => 'nullable|string|max:255',
-            'groom_name' => 'nullable|string|max:255',
-            'special_requests' => 'nullable|string',
-        ]);
-        
-        return redirect()->route('custom-package.step2')
-            ->withInput();
+        try {
+            // Validasi input
+            $validated = $request->validate([
+                'event_type_id' => 'required|exists:event_types,id',
+                'event_date' => [
+                    'required',
+                    'date',
+                    'after_or_equal:today',
+                    function ($attribute, $value, $fail) {
+                        if (strtotime($value) < strtotime('today')) {
+                            $fail('Tanggal tidak boleh di masa lalu');
+                        }
+                    },
+                ],
+                'event_time' => 'required|date_format:H:i',
+                'guest_count' => 'required|integer|min:1|max:1000',
+                'bride_name' => 'nullable|string|max:255',
+                'groom_name' => 'nullable|string|max:255',
+                'special_requests' => 'nullable|string|max:1000',
+                'decoration_theme' => 'nullable|string|max:255',
+            ], [
+                'event_type_id.required' => 'Pilih tipe acara',
+                'event_date.required' => 'Tanggal acara harus diisi',
+                'event_date.date' => 'Format tanggal tidak valid',
+                'event_date.after_or_equal' => 'Tanggal tidak boleh di masa lalu',
+                'event_time.required' => 'Waktu acara harus diisi',
+                'event_time.date_format' => 'Format waktu tidak valid',
+                'guest_count.required' => 'Jumlah tamu harus diisi',
+                'guest_count.integer' => 'Jumlah tamu harus berupa angka',
+                'guest_count.min' => 'Jumlah tamu minimal 1',
+                'guest_count.max' => 'Maksimal 1000 tamu',
+            ]);
+            
+            // Simpan data ke session
+            $request->session()->put('custom_package', [
+                'event_details' => $validated
+            ]);
+            
+            // Debug: Tampilkan isi session
+            Log::info('Session after step1:', [
+                'session_data' => $request->session()->get('custom_package')
+            ]);
+            
+            return redirect()->route('custom-package.step2')
+                ->with('success', 'Langkah 1 berhasil disimpan. Silakan pilih layanan yang diinginkan.');
+                
+        } catch (ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+                
+        } catch (\Exception $e) {
+            Log::error('Error in processStep1: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan. Silakan coba lagi.')
+                ->withInput();
+        }
     }
     
     /**
      * Show the wizard step 2 - Service Selection
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function step2(Request $request)
     {
-        if (!$request->old()) {
-            return redirect()->route('custom-package.step1');
-        }
-        
-        $serviceItems = ServiceItem::active()
-            ->with('media')
-            ->get()
-            ->groupBy('type');
+        try {
+            // Debug: Tampilkan isi session
+            Log::info('Session in step2:', [
+                'session_data' => $request->session()->all(),
+                'custom_package' => $request->session()->get('custom_package')
+            ]);
+
+            // Redirect to step 1 if no previous input
+            if (!$request->session()->has('custom_package.event_details')) {
+                Log::warning('No event details found in session, redirecting to step1');
+                return redirect()->route('custom-package.step1')
+                    ->with('error', 'Silakan isi detail acara terlebih dahulu');
+            }
             
-        // Initialize selected services array
+            // Get all service items with media
+            $serviceItems = ServiceItem::query()
+                ->with('media')
+                ->orderBy('name')
+                ->get()
+                ->groupBy('type');
+            
+            if ($serviceItems->isEmpty()) {
+                Log::error('No active service items found');
+                return redirect()->route('custom-package.step1')
+                    ->with('error', 'Maaf, saat ini tidak ada layanan yang tersedia. Silakan coba lagi nanti.');
+            }
+            
+            // Get selected services from session or old input
+            $selectedServices = [];
+            
+            if ($request->old('services')) {
+                $selectedServices = $this->processSelectedServices($request->old('services'));
+                
+                // Simpan kembali ke session jika ada old input
+                $request->session()->put('custom_package.services', $selectedServices);
+            } elseif ($request->session()->has('custom_package.services')) {
+                $selectedServices = $request->session()->get('custom_package.services');
+            }
+            
+            // Dapatkan event details dari session
+            $eventDetails = $request->session()->get('custom_package.event_details');
+            
+            Log::info('Rendering step2 view with data:', [
+                'service_items_count' => $serviceItems->count(),
+                'selected_services_count' => count($selectedServices),
+                'event_details' => $eventDetails
+            ]);
+            
+            return view('custom-package.step2', [
+                'serviceItems' => $serviceItems,
+                'selectedServices' => $selectedServices,
+                'eventDetails' => $eventDetails,
+                'currentStep' => 2,
+                'progress' => 66
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error in step2: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
+            return redirect()->route('custom-package.step1')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Process selected services from old input
+     * 
+     * @param  array|null  $services
+     * @return array
+     */
+    protected function processSelectedServices($services): array
+    {
         $selectedServices = [];
         
-        // Process old input if it exists
-        if ($request->old('services')) {
-            foreach ($request->old('services') as $service) {
+        if (is_array($services)) {
+            foreach ($services as $service) {
                 if (isset($service['service_item_id'])) {
-                    $selectedServices[$service['service_item_id']] = $service['quantity'] ?? 1;
+                    $selectedServices[$service['service_item_id']] = [
+                        'quantity' => (int)($service['quantity'] ?? 1),
+                        'notes' => $service['notes'] ?? null
+                    ];
                 }
             }
         }
         
-        $currentStep = 2;
-        
-        return view('custom-package.step2', [
-            'serviceItems' => $serviceItems,
-            'selectedServices' => $selectedServices,
-            'currentStep' => $currentStep
-        ]);
+        return $selectedServices;
     }
     
     /**
      * Process step 2 and go to step 3
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    /**
+     * Process step 2 and go to step 3
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function processStep2(Request $request)
     {
-        $validated = $request->validate([
-            'services' => 'required|array|min:1',
-            'services.*.service_item_id' => 'required|exists:service_items,id',
-            'services.*.quantity' => 'required|integer|min:1',
-            'services.*.notes' => 'nullable|string',
-        ], [
-            'services.required' => 'Pilih setidaknya satu layanan',
-            'services.min' => 'Pilih setidaknya satu layanan',
-            'services.*.service_item_id.required' => 'ID layanan tidak valid',
-            'services.*.service_item_id.exists' => 'Layanan yang dipilih tidak valid',
-            'services.*.quantity.required' => 'Jumlah harus diisi',
-            'services.*.quantity.min' => 'Jumlah minimal 1',
-        ]);
+        try {
+            Log::info('Processing step2 with input:', $request->all());
+            
+            // Pastikan ada data event details di session
+            if (!$request->session()->has('custom_package.event_details')) {
+                Log::warning('No event details in session, redirecting to step1');
+                return redirect()->route('custom-package.step1')
+                    ->with('error', 'Silakan isi detail acara terlebih dahulu');
+            }
+            
+            // Validasi input
+            $validated = $request->validate([
+                'services' => 'required|array|min:1|max:20',
+                'services.*.service_item_id' => 'required|exists:service_items,id',
+                'services.*.quantity' => 'required|integer|min:1|max:1000',
+                'services.*.notes' => 'nullable|string|max:500',
+            ], [
+                'services.required' => 'Pilih setidaknya satu layanan',
+                'services.min' => 'Pilih setidaknya satu layanan',
+                'services.*.service_item_id.required' => 'ID layanan tidak valid',
+                'services.*.service_item_id.exists' => 'Layanan yang dipilih tidak valid',
+                'services.*.quantity.required' => 'Jumlah harus diisi',
+                'services.*.quantity.integer' => 'Jumlah harus berupa angka',
+                'services.*.quantity.min' => 'Jumlah minimal 1',
+                'services.*.quantity.max' => 'Jumlah maksimal 1000',
+                'services.*.notes.max' => 'Catatan maksimal 500 karakter',
+            ]);
+            
+            // Dapatkan service items yang dipilih
+            $serviceItems = ServiceItem::whereIn('id', collect($validated['services'])
+                ->pluck('service_item_id'))
+                ->get()
+                ->keyBy('id');
+                
+            if ($serviceItems->isEmpty()) {
+                throw new \Exception('Tidak ada layanan yang valid ditemukan');
+            }
+            
+            // Siapkan data services untuk disimpan
+            $services = [];
+            $hasValidService = false;
+            
+            foreach ($validated['services'] as $service) {
+                $serviceItemId = $service['service_item_id'];
+                $serviceItem = $serviceItems->get($serviceItemId);
+                
+                if (!$serviceItem) {
+                    Log::warning('Service item not found, skipping', ['id' => $serviceItemId]);
+                    continue;
+                }
+                
+                $quantity = max(1, (int)($service['quantity'] ?? 1));
+                $price = (float)($serviceItem->base_price ?? 0);
+                
+                $services[] = [
+                    'service_item_id' => $serviceItem->id,
+                    'name' => $serviceItem->name,
+                    'price' => $price,
+                    'quantity' => $quantity,
+                    'notes' => $this->sanitizeString($service['notes'] ?? null),
+                    'total' => $price * $quantity,
+                    'image' => $serviceItem->getFirstMediaUrl('default', 'thumb')
+                ];
+                
+                $hasValidService = true;
+            }
+            
+            if (!$hasValidService) {
+                throw new \Exception('Tidak ada layanan yang valid untuk disimpan');
+            }
+            
+            // Update session
+            $request->session()->put('custom_package.services', $services);
+            
+            Log::info('Services saved to session:', [
+                'service_count' => count($services),
+                'first_service' => $services[0] ?? null
+            ]);
+            
+            return redirect()->route('custom-package.step3')
+                ->with('success', 'Layanan berhasil dipilih, silakan tinjau pesanan Anda');
+                
+        } catch (ValidationException $e) {
+            Log::warning('Validation error in processStep2:', [
+                'errors' => $e->errors(),
+                'input' => $request->all()
+            ]);
+            
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+                
+        } catch (\Exception $e) {
+            Log::error('Error in processStep2: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
+            
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+    
+    /**
+     * Validate service items existence and availability
+     * 
+     * @param  array  $services
+     * @throws \Illuminate\Validation\ValidationException
+     * @return void
+     */
+    protected function validateServiceItems(array $services): void
+    {
+        $serviceIds = collect($services)->pluck('service_item_id')->unique();
+        
+        $existingServices = ServiceItem::query()
+            ->whereIn('id', $serviceIds)
+            ->pluck('id')
+            ->toArray();
+            
+        if (count($existingServices) !== $serviceIds->count()) {
+            throw ValidationException::withMessages([
+                'services' => ['Beberapa layanan yang dipilih tidak tersedia.']
+            ]);
+        }
+    }
 
-        // Ensure we have the service items data for the review page
-        $serviceItems = ServiceItem::whereIn('id', collect($validated['services'])->pluck('service_item_id'))
+    /**
+     * Store service data in session for review
+     * 
+     * @param  array  $validatedServices
+     * @param  \Illuminate\Http\Request  $request
+     * @return void
+     */
+    protected function storeServicesInSession(array $validatedServices, Request $request): void
+    {
+        // Get all service items with their translations
+        $serviceItems = ServiceItem::query()
+            ->with(['translations'])
+            ->whereIn('id', collect($validatedServices)->pluck('service_item_id'))
             ->get()
             ->keyBy('id');
 
-        // Store the services data in the session for the review page
-        $servicesData = [];
-        foreach ($validated['services'] as $service) {
-            $serviceItem = $serviceItems->get($service['service_item_id']);
-            if ($serviceItem) {
-                $servicesData[] = [
-                    'service_item_id' => $serviceItem->id,
-                    'name' => $serviceItem->name,
-                    'description' => $serviceItem->description,
-                    'price' => $serviceItem->base_price,
-                    'quantity' => $service['quantity'],
-                    'notes' => $service['notes'] ?? null,
-                    'total' => $serviceItem->base_price * $service['quantity']
-                ];
-            }
-        }
+        // Prepare services data with proper formatting
+        $servicesData = collect($validatedServices)
+            ->map(function ($service) use ($serviceItems) {
+                $serviceItem = $serviceItems->get($service['service_item_id']);
+                
+                if (!$serviceItem) {
+                    return null;
+                }
 
-        // Store in session for the review page
+                $quantity = (int) ($service['quantity'] ?? 1);
+                $price = (float) $serviceItem->base_price;
+                
+                // Get translations with fallback
+                $name = $serviceItem->getTranslation('name', app()->getLocale(), 'id');
+                $description = $serviceItem->getTranslation('description', app()->getLocale(), 'id');
+
+                return [
+                    'service_item_id' => $serviceItem->id,
+                    'name' => $name,
+                    'description' => $description,
+                    'price' => $price,
+                    'quantity' => $quantity,
+                    'notes' => $this->sanitizeString($service['notes'] ?? null),
+                    'total' => $price * $quantity,
+                    'image' => $serviceItem->getFirstMediaUrl('default', 'thumb')
+                ];
+            })
+            ->filter() // Remove null values
+            ->values() // Reset array keys
+            ->toArray();
+
+        // Store in session
         $request->session()->put('custom_package.services', $servicesData);
+    }
+    
+    /**
+     * Sanitize string input
+     *
+     * @param  string|null  $value
+     * @return string|null
+     */
+    protected function sanitizeString(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
         
-        return redirect()->route('custom-package.step3')
-            ->withInput();
+        return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
     }
     
     /**
@@ -134,80 +412,144 @@ class CustomPackageController extends Controller
      */
     public function step3(Request $request)
     {
-        // Redirect to step 1 if no session data
-        if (!$request->session()->has('_old_input')) {
-            return redirect()->route('custom-package.step1')
-                ->with('error', 'Silakan isi detail acara terlebih dahulu');
-        }
-        
-        // Get event type ID from session
-        $eventTypeId = $request->old('event_type_id');
-        if (!$eventTypeId) {
-            return redirect()->route('custom-package.step1')
-                ->with('error', 'Tipe acara tidak valid');
-        }
-        
-        // Get event type with translations
-        $eventType = EventType::with(['translations' => function($query) {
-            $query->where('locale', app()->getLocale())
-                  ->orWhere('locale', 'id')
-                  ->orderByRaw("FIELD(locale, '".app()->getLocale()."', 'id')");
-        }])->find($eventTypeId);
-        
-        if (!$eventType) {
-            return redirect()->route('custom-package.step1')
-                ->with('error', 'Tipe acara tidak ditemukan');
-        }
-        
-        // Get services data from session
-        $services = $request->session()->get('custom_package.services', []);
-        
-        if (empty($services)) {
-            return redirect()->route('custom-package.step2')
-                ->with('error', 'Silakan pilih setidaknya satu layanan')
-                ->withInput();
-        }
-        
-        // Get service items for additional data
-        $serviceItems = ServiceItem::whereIn('id', collect($services)->pluck('service_item_id'))
-            ->get()
-            ->keyBy('id');
-        
-        // Enrich services data with additional information
-        $enrichedServices = [];
-        $totalPrice = 0;
-        
-        foreach ($services as $service) {
-            $serviceItem = $serviceItems->get($service['service_item_id']);
-            if ($serviceItem) {
-                $serviceTotal = $serviceItem->base_price * $service['quantity'];
-                $totalPrice += $serviceTotal;
-                
-                $enrichedServices[] = [
-                    'id' => $serviceItem->id,
-                    'name' => $serviceItem->name,
-                    'description' => $serviceItem->description,
-                    'price' => $serviceItem->base_price,
-                    'quantity' => $service['quantity'],
-                    'notes' => $service['notes'] ?? null,
-                    'total' => $serviceTotal,
-                    'image' => $serviceItem->image ? asset('storage/' . $serviceItem->image) : null
-                ];
+        try {
+            // Debug: Tampilkan isi session
+            Log::info('Session in step3:', [
+                'session_data' => $request->session()->all(),
+                'custom_package' => $request->session()->get('custom_package')
+            ]);
+
+            // Redirect to step 1 if no session data
+            if (!$request->session()->has('custom_package.event_details')) {
+                Log::warning('No event details in session, redirecting to step1');
+                return redirect()->route('custom-package.step1')
+                    ->with('error', 'Silakan isi detail acara terlebih dahulu');
             }
+            
+            // Get event details from session
+            $eventDetails = $request->session()->get('custom_package.event_details');
+            $eventTypeId = $eventDetails['event_type_id'] ?? null;
+            
+            if (!$eventTypeId) {
+                Log::error('No event type ID found in session');
+                return redirect()->route('custom-package.step1')
+                    ->with('error', 'Tipe acara tidak valid');
+            }
+            
+            // Get event type
+            $eventType = EventType::find($eventTypeId);
+            
+            if (!$eventType) {
+                Log::error('Event type not found:', ['event_type_id' => $eventTypeId]);
+                return redirect()->route('custom-package.step1')
+                    ->with('error', 'Tipe acara tidak ditemukan');
+            }
+            
+            // Get services data from session
+            $services = $request->session()->get('custom_package.services', []);
+            
+            Log::info('Services from session:', ['services' => $services]);
+            
+            if (empty($services)) {
+                Log::warning('No services selected, redirecting to step2');
+                return redirect()->route('custom-package.step2')
+                    ->with('error', 'Silakan pilih setidaknya satu layanan');
+            }
+            
+            // Get service items for additional data
+            $serviceItemIds = collect($services)->pluck('service_item_id')->filter()->toArray();
+            
+            if (empty($serviceItemIds)) {
+                Log::error('No valid service item IDs found');
+                return redirect()->route('custom-package.step2')
+                    ->with('error', 'Data layanan tidak valid')
+                    ->withInput();
+            }
+            
+            $serviceItems = ServiceItem::with('media')
+                ->whereIn('id', $serviceItemIds)
+                ->get()
+                ->keyBy('id');
+            
+            if ($serviceItems->isEmpty()) {
+                Log::error('No service items found for the given IDs', ['ids' => $serviceItemIds]);
+                return redirect()->route('custom-package.step2')
+                    ->with('error', 'Data layanan tidak ditemukan')
+                    ->withInput();
+            }
+            
+            // Enrich services data with additional information
+            $enrichedServices = [];
+            $subtotal = 0;
+            
+            foreach ($services as $service) {
+                $serviceItemId = $service['service_item_id'] ?? null;
+                
+                if (!$serviceItemId || !$serviceItems->has($serviceItemId)) {
+                    Log::warning('Skipping invalid service item', ['service' => $service]);
+                    continue;
+                }
+                
+                $serviceItem = $serviceItems->get($serviceItemId);
+                $quantity = max(1, (int)($service['quantity'] ?? 1));
+                $unitPrice = (float) ($serviceItem->base_price ?? 0);
+                $serviceTotal = $unitPrice * $quantity;
+                
+                $enrichedService = [
+                    'service_item' => (object)[
+                        'id' => $serviceItem->id,
+                        'name' => $serviceItem->name,
+                        'description' => $serviceItem->description,
+                        'image' => $serviceItem->getFirstMediaUrl('default', 'thumb')
+                    ],
+                    'quantity' => $quantity,
+                    'unit_price' => $unitPrice,
+                    'total_price' => $serviceTotal,
+                    'notes' => $this->sanitizeString($service['notes'] ?? null)
+                ];
+                
+                $enrichedServices[] = $enrichedService;
+                $subtotal += $serviceTotal;
+            }
+            
+            if (empty($enrichedServices)) {
+                Log::error('No valid services to display');
+                return redirect()->route('custom-package.step2')
+                    ->with('error', 'Tidak ada layanan yang valid untuk ditampilkan')
+                    ->withInput();
+            }
+            
+            // Calculate total price
+            $totalPrice = $subtotal;
+            
+            // Store the enriched services in session for the store method
+            $request->session()->put('custom_package.enriched_services', $enrichedServices);
+            
+            Log::info('Rendering step3 view with data:', [
+                'event_type' => $eventType->name,
+                'services_count' => count($enrichedServices),
+                'subtotal' => $subtotal,
+                'total_price' => $totalPrice
+            ]);
+            
+            return view('custom-package.step3', [
+                'currentStep' => 3,
+                'progress' => 100,
+                'eventType' => $eventType,
+                'eventDetails' => $eventDetails,
+                'services' => $enrichedServices,
+                'subtotal' => $subtotal,
+                'totalPrice' => $totalPrice,
+                'budget' => $request->old('budget', 0),
+                'reference_files' => $request->old('reference_files'),
+                'terms' => $request->old('terms', false)
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error in step3: ' . $e->getMessage() . '\n' . $e->getTraceAsString());
+            return redirect()->route('custom-package.step2')
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-        
-        // Store the enriched services in session for the store method
-        $request->session()->put('custom_package.enriched_services', $enrichedServices);
-        
-        return view('custom-package.step3', [
-            'currentStep' => 3,
-            'eventType' => $eventType,
-            'services' => $enrichedServices,
-            'totalPrice' => $totalPrice,
-            'budget' => $request->old('budget'),
-            'reference_files' => $request->old('reference_files'),
-            'terms' => $request->old('terms', false)
-        ]);
     }
     
     /**

@@ -328,12 +328,12 @@
         height: 32px;
         border-radius: 50%;
         background-color: #f8f9fa;
-        color: #007bff;
+        color: #b9c24b;
         transition: all 0.3s ease;
     }
     
     .social-link:hover {
-        background-color: #007bff;
+        background-color: #b9c24b;
         color: #fff;
     }
     

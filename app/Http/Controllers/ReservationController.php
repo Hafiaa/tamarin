@@ -219,7 +219,7 @@ class ReservationController extends Controller
             $reservation->bride_name = $validated['bride_name'] ?? null;
             $reservation->groom_name = $validated['groom_name'] ?? null;
             $reservation->special_requests = $validated['special_requests'] ?? null;
-            $reservation->status = 'pending_admin_review';
+            $reservation->status = Reservation::STATUS_PENDING;
             
             // Calculate total price based on package or custom items
             if ($reservation->package_template_id) {

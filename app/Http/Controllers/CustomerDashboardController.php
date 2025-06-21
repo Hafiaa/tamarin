@@ -31,7 +31,11 @@ class CustomerDashboardController extends Controller
         
         $upcomingReservations = Reservation::where('user_id', $user->id)
             ->where('event_date', '>=', now())
-            ->where('status', '!=', 'cancelled')
+            ->where(function($query) {
+                $query->where('status', Reservation::STATUS_PENDING)
+                      ->orWhere('status', Reservation::STATUS_APPROVED)
+                      ->orWhere('status', Reservation::STATUS_COMPLETED);
+            })
             ->orderBy('event_date')
             ->take(3)
             ->get();

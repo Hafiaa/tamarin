@@ -1,18 +1,29 @@
 @extends('custom-package.layout')
 
 @section('content')
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Event Details</h2>
+<div class="form-container px-3 px-md-4 px-lg-5">
+    <div class="mb-4">
+        <h2 class="h4 mb-2">Event Details</h2>
+        <p class="text-muted mb-0">Please fill in your event information</p>
+    </div>
     
-    <form action="{{ route('custom-package.process-step1') }}" method="POST">
+    <form action="{{ route('custom-package.process-step1') }}" method="POST" id="step1Form">
         @csrf
         
-        <div class="space-y-6">
+        @if(session('error'))
+            <div class="alert alert-danger">
+                {{ session('error') }}
+            </div>
+        @endif
+        
+        <div class="row g-4">
             <!-- Event Type -->
-            <div>
-                <label for="event_type_id" class="block text-sm font-medium text-gray-700">Event Type <span class="text-red-500">*</span></label>
-                <select id="event_type_id" name="event_type_id" required
-                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                    <option value="">Select an event type</option>
+            <div class="col-12">
+                <label for="event_type_id" class="form-label">
+                    Tipe Acara <span class="text-danger">*</span>
+                </label>
+                <select id="event_type_id" name="event_type_id" class="form-select @error('event_type_id') is-invalid @enderror" required>
+                    <option value="">Pilih tipe acara</option>
                     @foreach($eventTypes as $eventType)
                         <option value="{{ $eventType->id }}" {{ old('event_type_id') == $eventType->id ? 'selected' : '' }}>
                             {{ $eventType->name }}
@@ -20,92 +31,125 @@
                     @endforeach
                 </select>
                 @error('event_type_id')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Event Date -->
-                <div>
-                    <label for="event_date" class="block text-sm font-medium text-gray-700">Event Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="event_date" name="event_date" required
-                           min="{{ now()->format('Y-m-d') }}"
-                           value="{{ old('event_date', $reservation->event_date ?? '') }}"
-                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    @error('event_date')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                <!-- Event Time -->
-                <div>
-                    <label for="event_time" class="block text-sm font-medium text-gray-700">Event Time <span class="text-red-500">*</span></label>
-                    <input type="time" id="event_time" name="event_time" required
-                           value="{{ old('event_time', $reservation->event_time ?? '') }}"
-                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    @error('event_time')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+            <!-- Event Date -->
+            <div class="col-md-6">
+                <label for="event_date" class="form-label">
+                    Tanggal Acara <span class="text-danger">*</span>
+                </label>
+                <input type="date" id="event_date" name="event_date" 
+                       class="form-control @error('event_date') is-invalid @enderror" 
+                       min="{{ now()->format('Y-m-d') }}"
+                       value="{{ old('event_date') }}" required>
+                @error('event_date')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+            
+            <!-- Event Time -->
+            <div class="col-md-6">
+                <label for="event_time" class="form-label">
+                    Waktu Acara <span class="text-danger">*</span>
+                </label>
+                <input type="time" id="event_time" name="event_time" 
+                       class="form-control @error('event_time') is-invalid @enderror" 
+                       value="{{ old('event_time') }}" required>
+                @error('event_time')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
             
             <!-- Guest Count -->
-            <div class="w-1/2">
-                <label for="guest_count" class="block text-sm font-medium text-gray-700">Number of Guests <span class="text-red-500">*</span></label>
-                <input type="number" id="guest_count" name="guest_count" min="1" required
-                       value="{{ old('guest_count', $reservation->guest_count ?? '') }}"
-                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            <div class="col-md-6">
+                <label for="guest_count" class="form-label">
+                    Jumlah Tamu <span class="text-danger">*</span>
+                </label>
+                <input type="number" id="guest_count" name="guest_count" 
+                       class="form-control @error('guest_count') is-invalid @enderror" 
+                       min="1" 
+                       max="1000"
+                       value="{{ old('guest_count') }}" required>
                 @error('guest_count')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
             </div>
             
-            <!-- Couple Names -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Bride's Name -->
-                <div>
-                    <label for="bride_name" class="block text-sm font-medium text-gray-700">Bride's Name (Optional)</label>
-                    <input type="text" id="bride_name" name="bride_name"
-                           value="{{ old('bride_name', $reservation->bride_name ?? '') }}"
-                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    @error('bride_name')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                <!-- Groom's Name -->
-                <div>
-                    <label for="groom_name" class="block text-sm font-medium text-gray-700">Groom's Name (Optional)</label>
-                    <input type="text" id="groom_name" name="groom_name"
-                           value="{{ old('groom_name', $reservation->groom_name ?? '') }}"
-                           class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    @error('groom_name')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+            <!-- Decoration Theme -->
+            <div class="col-md-6">
+                <label for="decoration_theme" class="form-label">
+                    Tema Dekorasi (Opsional)
+                </label>
+                <select id="decoration_theme" name="decoration_theme" class="form-select">
+                    <option value="">Pilih Tema Dekorasi</option>
+                    <option value="Romantic">Romantic</option>
+                    <option value="Garden">Garden</option>
+                    <option value="Minimalist">Minimalist</option>
+                    <option value="Rustic">Rustic</option>
+                    <option value="Vintage">Vintage</option>
+                    <option value="Custom">Custom (Sebutkan di catatan)</option>
+                </select>
+                <small class="form-text text-muted">Pilih tema dekorasi yang diinginkan</small>
             </div>
             
-            <!-- Special Requests -->
-            <div>
-                <label for="special_requests" class="block text-sm font-medium text-gray-700">Special Requests (Optional)</label>
+            <!-- Bride's Name -->
+            <div class="col-md-6">
+                <label for="bride_name" class="form-label">Nama Pengantin Wanita (Opsional)</label>
+                <input type="text" id="bride_name" name="bride_name"
+                       class="form-control @error('bride_name') is-invalid @enderror" 
+                       value="{{ old('bride_name') }}"
+                       placeholder="Nama pengantin wanita">
+                @error('bride_name')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+            
+            <!-- Groom's Name -->
+            <div class="col-md-6">
+                <label for="groom_name" class="form-label">Nama Pengantin Pria (Opsional)</label>
+                <input type="text" id="groom_name" name="groom_name"
+                       class="form-control @error('groom_name') is-invalid @enderror" 
+                       value="{{ old('groom_name') }}"
+                       placeholder="Nama pengantin pria">
+                @error('groom_name')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
+            
+            <!-- Additional Notes -->
+            <div class="col-12">
+                <label for="special_requests" class="form-label">Catatan Tambahan (Opsional)</label>
                 <textarea id="special_requests" name="special_requests" rows="3"
-                          class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ old('special_requests', $reservation->special_requests ?? '') }}</textarea>
+                          class="form-control @error('special_requests') is-invalid @enderror"
+                          placeholder="Permintaan khusus atau catatan tambahan">{{ old('special_requests') }}</textarea>
                 @error('special_requests')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
             </div>
             
             <!-- Navigation Buttons -->
-            <div class="flex justify-end pt-6 border-t border-gray-200">
-                <div class="space-x-3">
-                    <a href="{{ route('home') }}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Cancel
-                    </a>
-                    <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Next: Select Services
-                    </button>
-                </div>
+            <div class="col-12 mt-4 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary px-4" id="submitButton">
+                    <span id="buttonText">Lanjut ke Langkah Berikutnya</span>
+                    <span class="spinner-border spinner-border-sm d-none" id="spinner" role="status" aria-hidden="true"></span>
+                </button>
             </div>
+            
+            @push('scripts')
+            <script>
+                document.getElementById('step1Form').addEventListener('submit', function() {
+                    const button = document.getElementById('submitButton');
+                    const spinner = document.getElementById('spinner');
+                    const buttonText = document.getElementById('buttonText');
+                    
+                    button.disabled = true;
+                    spinner.classList.remove('d-none');
+                    buttonText.textContent = 'Memproses...';
+                });
+            </script>
+            @endpush
         </div>
     </form>
 @endsection

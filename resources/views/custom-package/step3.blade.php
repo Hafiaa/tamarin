@@ -1,5 +1,10 @@
 @extends('custom-package.layout')
 
+@php
+    // Debug data yang diterima
+    // dd($services, $eventType);
+@endphp
+
 @push('styles')
 <style>
     .service-item {
@@ -56,9 +61,21 @@
         <input type="hidden" name="groom_name" value="{{ old('groom_name') }}">
         <input type="hidden" name="special_requests" value="{{ old('special_requests') }}">
         
-        @foreach(old('services', []) as $index => $service)
-            <input type="hidden" name="services[{{ $index }}][service_item_id]" value="{{ $service['service_item_id'] }}">
-            <input type="hidden" name="services[{{ $index }}][quantity]" value="{{ $service['quantity'] }}">
+        @php
+            $services = $services ?? [];
+            $subtotal = 0;
+        @endphp
+        
+        @foreach($services as $index => $service)
+            @php
+                $serviceId = $service['service_item']->id ?? ($service['service_item_id'] ?? null);
+                $quantity = $service['quantity'] ?? 1;
+                $unitPrice = $service['unit_price'] ?? 0;
+                $serviceTotal = $quantity * $unitPrice;
+                $subtotal += $serviceTotal;
+            @endphp
+            <input type="hidden" name="services[{{ $index }}][service_item_id]" value="{{ $serviceId }}">
+            <input type="hidden" name="services[{{ $index }}][quantity]" value="{{ $quantity }}">
             <input type="hidden" name="services[{{ $index }}][notes]" value="{{ $service['notes'] ?? '' }}">
         @endforeach
         
@@ -133,29 +150,49 @@
                 </div>
                 <div class="border-t border-gray-200 px-4 py-5 sm:p-0">
                     <dl class="sm:divide-y sm:divide-gray-200">
-                        @foreach($services as $index => $service)
-                            <div class="py-4 sm:py-5 sm:grid sm:grid-cols-12 sm:gap-4 sm:px-6">
-                                <div class="col-span-8">
-                                    <div class="font-medium text-gray-900">{{ $service['service_item']->name }}</div>
-                                    @if($service['notes'])
-                                        <div class="mt-1 text-sm text-gray-500">{{ $service['notes'] }}</div>
-                                    @endif
+                        @if(count($services) > 0)
+                            @foreach($services as $service)
+                                @php
+                                    $serviceItem = $service['service_item'] ?? null;
+                                    $serviceId = $serviceItem->id ?? ($service['service_item_id'] ?? null);
+                                    $serviceName = $serviceItem->name ?? 'Layanan #' . $serviceId;
+                                    $serviceImage = $serviceItem->image ?? null;
+                                    $quantity = $service['quantity'] ?? 1;
+                                    $unitPrice = $service['unit_price'] ?? 0;
+                                    $serviceTotal = $quantity * $unitPrice;
+                                @endphp
+                                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-12 sm:gap-4 sm:px-6 border-b border-gray-100">
+                                    <div class="col-span-8 flex items-start">
+                                        @if($serviceImage)
+                                            <img src="{{ $serviceImage }}" alt="{{ $serviceName }}" class="h-16 w-16 flex-shrink-0 rounded-md object-cover mr-4">
+                                        @endif
+                                        <div>
+                                            <div class="font-medium text-gray-900">{{ $serviceName }}</div>
+                                            @if(!empty($service['notes']))
+                                                <div class="mt-1 text-sm text-gray-500">{{ $service['notes'] }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="col-span-2 text-sm text-gray-900">
+                                        {{ $quantity }} × {{ number_format($unitPrice, 0, ',', '.') }} IDR
+                                    </div>
+                                    <div class="col-span-2 text-right font-medium text-gray-900">
+                                        {{ number_format($serviceTotal, 0, ',', '.') }} IDR
+                                    </div>
                                 </div>
-                                <div class="col-span-2 text-sm text-gray-900">
-                                    {{ $service['quantity'] }} × {{ number_format($service['unit_price'], 0, ',', '.') }} IDR
-                                </div>
-                                <div class="col-span-2 text-right font-medium text-gray-900">
-                                    {{ number_format($service['total_price'], 0, ',', '.') }} IDR
-                                </div>
+                            @endforeach
+                        @else
+                            <div class="px-6 py-4 text-center text-gray-500">
+                                Tidak ada layanan yang dipilih. Silakan kembali ke langkah sebelumnya.
                             </div>
-                        @endforeach
+                        @endif
                         
                         <!-- Subtotal -->
-                        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-12 sm:gap-4 sm:px-6 border-t border-gray-200">
-                            <div class="col-span-10 text-right font-medium text-gray-900">
+                        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-12 sm:gap-4 sm:px-6 border-t border-gray-200 bg-gray-50">
+                            <div class="col-span-10 text-right font-semibold text-gray-900">
                                 Subtotal
                             </div>
-                            <div class="col-span-2 text-right font-medium text-gray-900">
+                            <div class="col-span-2 text-right font-semibold text-gray-900">
                                 {{ number_format($subtotal, 0, ',', '.') }} IDR
                             </div>
                         </div>
@@ -242,15 +279,20 @@
             
             <!-- Navigation Buttons -->
             <div class="flex justify-between pt-6">
-                <button type="button" 
-                    onclick="window.location.href='{{ route('custom-package.step2') }}'"
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Back
-                </button>
-                <button type="submit" 
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    id="submitButton">
-                    Submit Reservation
+                <a href="{{ route('custom-package.step2') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-arrow-left mr-2"></i> Kembali
+                </a>
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" :disabled="isLoading">
+                    <span x-show="!isLoading">
+                        Selanjutnya <i class="fas fa-arrow-right ml-2"></i>
+                    </span>
+                    <span x-show="isLoading" class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Memproses...
+                    </span>
                 </button>
             </div>
             </div>
@@ -260,208 +302,143 @@
 
 @push('scripts')
 <script>
+    document.addEventListener('alpine:init', () => {
+        // Initialize form handler
+        Alpine.data('formHandler', () => ({
+            isLoading: false,
+            
+            init() {
+                // Initialize any form related functionality here
+            },
+            
+            submitForm() {
+                // Show loading state
+                this.isLoading = true;
+                
+                // The form will be submitted normally after this
+                return true;
+            }
+        }));
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         // Format budget input
         const budgetInput = document.getElementById('budget');
         if (budgetInput) {
             budgetInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
+                // Remove non-numeric characters
+                let value = this.value.replace(/[^0-9]/g, '');
+                // Format with thousand separators
+                this.value = new Intl.NumberFormat('id-ID').format(value);
+                // Update hidden input
                 document.getElementById('budgetInput').value = value;
             });
         }
-        
-        // Handle file previews
+
+        // Handle file preview
         const fileInput = document.getElementById('reference_files');
-        const filePreview = document.getElementById('file-preview');
+        const filePreview = document.getElementById('filePreview');
         
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
+        if (fileInput && filePreview) {
+            fileInput.addEventListener('change', function(e) {
                 filePreview.innerHTML = '';
                 
                 if (this.files.length > 0) {
-                    Array.from(this.files).forEach(file => {
+                    Array.from(this.files).forEach((file, index) => {
                         const filePreviewItem = document.createElement('div');
                         filePreviewItem.className = 'file-preview';
                         
-                        let previewContent = '';
-                        
                         if (file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                filePreviewItem.innerHTML = `
-                                    <img src="${e.target.result}" alt="${file.name}">
-                                    <div class="file-info">
-                                        <div class="font-medium truncate">${file.name}</div>
-                                        <div>${(file.size / 1024).toFixed(1)} KB</div>
-                                    </div>
-                                    <div class="file-remove">×</div>
-                                `;
-                                
-                                // Add remove functionality
-                                const removeBtn = filePreviewItem.querySelector('.file-remove');
-                                removeBtn.addEventListener('click', function() {
-                                    filePreviewItem.remove();
-                                    // Remove the file from the input
-                                    const dt = new DataTransfer();
-                                    const input = fileInput;
-                                    const { files } = input;
-                                    
-                                    for (let i = 0; i < files.length; i++) {
-                                        if (files[i].name !== file.name) {
-                                            dt.items.add(files[i]);
-                                        }
-                                    }
-                                    
-                                    input.files = dt.files;
-                                });
-                                
-                                filePreview.appendChild(filePreviewItem);
-                            };
-                            reader.readAsDataURL(file);
+                            const img = document.createElement('img');
+                            img.src = URL.createObjectURL(file);
+                            filePreviewItem.appendChild(img);
                         } else {
-                            filePreviewItem.innerHTML = `
-                                <div class="p-2 bg-gray-100 rounded">
-                                    <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                </div>
-                                <div class="file-info">
-                                    <div class="font-medium truncate">${file.name}</div>
-                                    <div>${(file.size / 1024).toFixed(1)} KB</div>
-                                </div>
-                                <div class="file-remove">×</div>
+                            const icon = document.createElement('div');
+                            icon.className = 'file-icon';
+                            icon.innerHTML = `
+                                <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
                             `;
+                            filePreviewItem.appendChild(icon);
+                        }
+                        
+                        const fileInfo = document.createElement('div');
+                        fileInfo.className = 'file-info';
+                        fileInfo.innerHTML = `
+                            <div class="font-medium truncate">${file.name}</div>
+                            <div class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</div>
+                        `;
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.type = 'button';
+                        removeBtn.className = 'file-remove';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.onclick = function() {
+                            const dt = new DataTransfer();
+                            const input = fileInput;
                             
-                            // Add remove functionality
-                            const removeBtn = filePreviewItem.querySelector('.file-remove');
-                            removeBtn.addEventListener('click', function() {
-                                filePreviewItem.remove();
-                                // Remove the file from the input
-                                const dt = new DataTransfer();
-                                const input = fileInput;
-                                const { files } = input;
-                                
-                                for (let i = 0; i < files.length; i++) {
-                                    if (files[i].name !== file.name) {
-                                        dt.items.add(files[i]);
-                                    }
+                            // Add all files except the one being removed
+                            Array.from(input.files).forEach((f, i) => {
+                                if (i !== index) {
+                                    dt.items.add(f);
                                 }
-                                
-                                input.files = dt.files;
                             });
                             
-                            filePreview.appendChild(filePreviewItem);
-                        }
+                            // Update file input
+                            input.files = dt.files;
+                            
+                            // Remove preview
+                            filePreviewItem.remove();
+                            
+                            // Trigger change event
+                            input.dispatchEvent(new Event('change'));
+                        };
+                        
+                        filePreviewItem.appendChild(fileInfo);
+                        filePreviewItem.appendChild(removeBtn);
+                        filePreview.appendChild(filePreviewItem);
                     });
                 }
             });
         }
         
-        // Form submission handling
-        const form = document.getElementById('reviewForm');
-        const submitButton = document.getElementById('submitButton');
+        // Format currency on page load
+        document.querySelectorAll('.currency').forEach(function(element) {
+            const value = parseFloat(element.textContent.replace(/[^0-9.-]+/g,""));
+            if (!isNaN(value)) {
+                element.textContent = new Intl.NumberFormat('id-ID', {
+                    style: 'decimal',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(value);
+            }
+        });
         
-        if (form && submitButton) {
-            form.addEventListener('submit', function(e) {
-                if (!document.getElementById('terms').checked) {
-                    e.preventDefault();
-                    alert('Please agree to the terms and conditions');
-                    return false;
-                }
-                
-                // Disable the submit button to prevent double submission
-                submitButton.disabled = true;
-                submitButton.innerHTML = `
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                `;
-            });
-        }
-        // Handle file preview
-        const fileInput = document.getElementById('reference_files');
-        const filePreview = document.getElementById('filePreview');
-        
-        if (fileInput) {
-            fileInput.addEventListener('change', function(e) {
-                filePreview.innerHTML = ''; // Clear previous previews
-                
-                for (const file of e.target.files) {
-                    const filePreviewItem = document.createElement('div');
-                    filePreviewItem.className = 'file-preview';
-                    
-                    if (file.type.startsWith('image/')) {
-                        const img = document.createElement('img');
-                        img.src = URL.createObjectURL(file);
-                        filePreviewItem.appendChild(img);
-                    } else {
-                        const icon = document.createElement('div');
-                        icon.className = 'text-gray-400';
-                        icon.innerHTML = `
-                            <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                        `;
-                        filePreviewItem.appendChild(icon);
-                    }
-                    
-                    const fileInfo = document.createElement('div');
-                    fileInfo.className = 'file-info';
-                    fileInfo.innerHTML = `
-                        <div class="font-medium truncate" style="max-width: 150px;">${file.name}</div>
-                        <div>${(file.size / 1024).toFixed(1)} KB</div>
-                    `;
-                    
-                    filePreviewItem.appendChild(fileInfo);
-                    
-                    const removeBtn = document.createElement('span');
-                    removeBtn.className = 'file-remove';
-                    removeBtn.innerHTML = '&times;';
-                    removeBtn.onclick = function() {
-                        // Create a new DataTransfer object to handle file removal
-                        const dt = new DataTransfer();
-                        const { files } = fileInput;
-                        
-                        // Add all files except the one to be removed
-                        for (let i = 0; i < files.length; i++) {
-                            if (i !== Array.from(fileInput.files).indexOf(file)) {
-                                dt.items.add(files[i]);
-                            }
-                        }
-                        
-                        // Update the file input
-                        fileInput.files = dt.files;
-                        
-                        // Remove the preview
-                        filePreviewItem.remove();
-                        
-                        // Trigger change event to update form data
-                        fileInput.dispatchEvent(new Event('change'));
-                    };
-                    
-                    filePreviewItem.appendChild(removeBtn);
-                    filePreview.appendChild(filePreviewItem);
-                }
-            });
-        }
-        
-        // Form submission handling
+        // Handle form submission
         const form = document.getElementById('reviewForm');
         if (form) {
             form.addEventListener('submit', function(e) {
-                // Add loading state to submit button
                 const submitBtn = form.querySelector('button[type="submit"]');
                 if (submitBtn) {
+                    // Disable button and show loading state
                     submitBtn.disabled = true;
+                    const originalHtml = submitBtn.innerHTML;
                     submitBtn.innerHTML = `
                         <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Processing...
+                        Memproses...
                     `;
+                    
+                    // Re-enable button if form submission fails
+                    setTimeout(() => {
+                        if (!form.checkValidity()) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalHtml;
+                        }
+                    }, 5000);
                 }
             });
         }

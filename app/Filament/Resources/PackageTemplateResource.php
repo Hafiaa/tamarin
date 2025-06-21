@@ -33,6 +33,29 @@ class PackageTemplateResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Paket')
                     ->schema([
+                        // Field untuk upload featured image
+                        Forms\Components\FileUpload::make('featured_image')
+                            ->label('Foto Utama')
+                            ->image()
+                            ->directory('package-featured')
+                            ->visibility('public')
+                            ->imagePreviewHeight('250')
+                            ->openable()
+                            ->downloadable()
+                            ->columnSpanFull(),
+                            
+                        // Field untuk upload gallery images
+                        Forms\Components\FileUpload::make('gallery')
+                            ->label('Galeri Foto')
+                            ->multiple()
+                            ->image()
+                            ->directory('package-gallery')
+                            ->visibility('public')
+                            ->imagePreviewHeight('250')
+                            ->openable()
+                            ->downloadable()
+                            ->enableReordering()
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Paket')
                             ->required()
@@ -102,7 +125,7 @@ class PackageTemplateResource extends Resource
             //
         ];
     }
-
+    
     public static function getPages(): array
     {
         return [
@@ -110,5 +133,61 @@ class PackageTemplateResource extends Resource
             'create' => Pages\CreatePackageTemplate::route('/create'),
             'edit' => Pages\EditPackageTemplate::route('/{record}/edit'),
         ];
+    }
+    
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'description'];
+    }
+    
+    protected function getHeaderActions(): array
+    {
+        return [
+            // Hapus tombol upload_images karena sudah tidak diperlukan
+        ];
+    }
+    
+    public static function afterCreate(PackageTemplate $record, array $data): void
+    {
+        // Handle featured image upload
+        if (request()->hasFile('featured_image')) {
+            $record->clearMediaCollection('featured_image');
+            $record->addMediaFromRequest('featured_image')
+                 ->usingName($record->name . '-featured')
+                 ->usingFileName(uniqid() . '.' . request()->file('featured_image')->getClientOriginalExtension())
+                 ->toMediaCollection('featured_image', 'public');
+        }
+        
+        // Handle gallery images upload
+        if (request()->hasFile('gallery')) {
+            foreach (request()->file('gallery') as $image) {
+                $record->addMedia($image->getRealPath())
+                     ->usingName($record->name . '-gallery-' . uniqid())
+                     ->usingFileName(uniqid() . '.' . $image->getClientOriginalExtension())
+                     ->toMediaCollection('gallery', 'public');
+            }
+        }
+    }
+    
+    public static function afterUpdate(PackageTemplate $record, array $data): void
+    {
+        // Handle featured image update
+        if (request()->hasFile('featured_image')) {
+            $record->clearMediaCollection('featured_image');
+            $record->addMediaFromRequest('featured_image')
+                 ->usingName($record->name . '-featured')
+                 ->usingFileName(uniqid() . '.' . request()->file('featured_image')->getClientOriginalExtension())
+                 ->toMediaCollection('featured_image', 'public');
+        }
+        
+        // Handle gallery images addition (append, not replace)
+        if (request()->hasFile('gallery')) {
+            foreach (request()->file('gallery') as $image) {
+                $record->addMedia($image->getRealPath())
+                     ->usingName($record->name . '-gallery-' . uniqid())
+                     ->usingFileName(uniqid() . '.' . $image->getClientOriginalExtension())
+                     ->toMediaCollection('gallery', 'public');
+            }
+        }
     }
 }

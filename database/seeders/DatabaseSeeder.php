@@ -49,6 +49,7 @@ class DatabaseSeeder extends Seeder
             CompleteMenuItemsSeeder::class,
             PackageTemplatesSeeder::class,
             AddPackageImagesSeeder::class,
+            ManualImageUploader::class,
             IndonesianHolidaysSeeder::class
         ]);
         

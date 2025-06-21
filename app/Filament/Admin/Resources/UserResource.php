@@ -34,38 +34,23 @@ class UserResource extends Resource
                     ->email()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
+
                 Forms\Components\TextInput::make('password')
                     ->password()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\DateTimePicker::make('last_login_at'),
+
                 Forms\Components\TextInput::make('phone')
                     ->tel()
                     ->maxLength(255)
                     ->default(null),
                 Forms\Components\Textarea::make('address')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('city')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('state')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('postal_code')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('country')
-                    ->maxLength(255)
-                    ->default(null),
                 Forms\Components\Toggle::make('notify_reservation_updates')
                     ->required(),
                 Forms\Components\Toggle::make('notify_payment_updates')
                     ->required(),
-                Forms\Components\Toggle::make('notify_promotions')
-                    ->required(),
-                Forms\Components\Toggle::make('notify_newsletters')
-                    ->required(),
+
             ]);
     }
 
@@ -81,12 +66,8 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('last_login_at')
-                    ->dateTime()
-                    ->sortable(),
+
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -97,22 +78,11 @@ class UserResource extends Resource
                     ->toggleable(true),
                 Tables\Columns\TextColumn::make('phone')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('city')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('state')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('postal_code')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('country')
-                    ->searchable(),
                 Tables\Columns\IconColumn::make('notify_reservation_updates')
                     ->boolean(),
                 Tables\Columns\IconColumn::make('notify_payment_updates')
                     ->boolean(),
-                Tables\Columns\IconColumn::make('notify_promotions')
-                    ->boolean(),
-                Tables\Columns\IconColumn::make('notify_newsletters')
-                    ->boolean(),
+
             ])
             ->filters([
                 //

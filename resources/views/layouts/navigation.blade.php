@@ -86,7 +86,7 @@
             <div class="d-flex align-items-center">
                 @auth
                     <!-- Create Custom Package Button -->
-                    <a href="{{ route('custom-package.step1') }}" class="btn btn-primary me-3">
+                    <a href="{{ route('custom-package.step1') }}" class="btn btn-sm btn-primary me-2 px-3 py-2">
                         <i class="fas fa-magic me-1"></i> Create Custom Package
                     </a>
                 

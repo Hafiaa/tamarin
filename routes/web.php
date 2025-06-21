@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ManualUploadController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\CustomerDashboardController;
 use App\Http\Controllers\EventController;
@@ -48,6 +49,14 @@ Route::middleware(['auth'])->group(function () {
 // Public route that redirects to login if not authenticated
 Route::get('/reservations/start/{packageId?}', [ReservationController::class, 'startReservation'])
     ->name('reservations.start');
+
+// Manual Upload Routes - Protected by auth middleware
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/manual-upload/{package}', [ManualUploadController::class, 'showUploadForm'])->name('manual-upload');
+    Route::post('/upload/featured/{package}', [ManualUploadController::class, 'uploadFeaturedImage'])->name('upload.featured');
+    Route::post('/upload/gallery/{package}', [ManualUploadController::class, 'uploadGalleryImage'])->name('upload.gallery');
+    Route::delete('/delete-image/{media}', [ManualUploadController::class, 'deleteImage'])->name('delete.image');
+});
 
 // Custom Package Wizard Routes
 Route::prefix('custom-package')->name('custom-package.')->group(function () {

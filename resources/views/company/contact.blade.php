@@ -34,7 +34,7 @@
                             <i class="fas fa-map-marker-alt fa-3x"></i>
                         </div>
                         <h4 class="contact-title mb-3">Our Location</h4>
-                        <p class="contact-text mb-0">{{ setting('address', 'Jl. Taman Sari No. 123, Jakarta Barat, DKI Jakarta, Indonesia') }}</p>
+                        <p class="contact-text mb-0">{{ setting('address', 'Jl. Manggala No.161, RT.007/RW.007, Deplu, Cipadu Jaya, Kec. Larangan, Kota Tangerang, Banten 15155') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-4 mb-4 mb-lg-0">
@@ -42,13 +42,13 @@
                         <div class="contact-icon mb-3 text-primary">
                             <i class="fas fa-phone-alt fa-3x"></i>
                         </div>
-                        <h4 class="contact-title mb-3">Phone & Email</h4>
+                        <h4 class="contact-title mb-3">Phone</h4>
                         <p class="contact-text mb-2">
-                            <strong>Phone:</strong> {{ setting('phone', '+62 21 1234 5678') }}
+                            <strong>Phone:</strong> {{ setting('phone', '0813-1828-3874') }}
                         </p>
-                        <p class="contact-text mb-0">
+                        <!-- <p class="contact-text mb-0">
                             <strong>Email:</strong> <a href="mailto:{{ setting('email', 'info@tamacafe.com') }}" class="text-decoration-none">{{ setting('email', 'info@tamacafe.com') }}</a>
-                        </p>
+                        </p> -->
                     </div>
                 </div>
                 <div class="col-lg-4">
@@ -57,7 +57,7 @@
                             <i class="fas fa-clock fa-3x"></i>
                         </div>
                         <h4 class="contact-title mb-3">Business Hours</h4>
-                        <p class="contact-text mb-0">{{ $contactInfo['hours'] ?? 'Monday - Sunday: 9:00 AM - 10:00 PM' }}</p>
+                        <p class="contact-text mb-0">{{ $contactInfo['hours'] ?? 'Monday - Sunday: 11:00 AM - 10:00 PM' }}</p>
                     </div>
                 </div>
             </div>
@@ -116,7 +116,7 @@
                             @if(isset($contactInfo['google_maps_embed']) && !empty($contactInfo['google_maps_embed']))
                                 {!! $contactInfo['google_maps_embed'] !!}
                             @else
-                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.935573611111!2d107.60847431532068!3d-6.89772669501907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68e64a6f4f4b4d%3A0x1e3a1d9a4d9a4d9a!2sTama%20Cafe!5e0!3m2!1sen!2sid!4v1234567890123!5m2!1sen!2sid" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.1179797985196!2d106.7464471!3d-6.2481807!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f092d71129ab%3A0x5722837cd22ca824!2sTamarin%20Nurseries%20Garden%20%26%20Cafe!5e0!3m2!1sid!2sid!4v1750335274927!5m2!1sid!2sid" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
                             @endif
                         </div>
                     </div>
@@ -241,7 +241,7 @@
     
     .accordion-button:not(.collapsed) {
         background-color: rgba(0, 123, 255, 0.1);
-        color: #0d6efd;
+        color: #B9C24B
     }
     
     .accordion-button:focus {
